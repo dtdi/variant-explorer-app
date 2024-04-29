@@ -1,0 +1,30 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "prod.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ids": "^1.0.5",
+    "min-dash": "^4.2.1"
+  },
+  "devDependencies": {
+    "@sentry/integrations": "^7.110.1",
+    "@sentry/node": "^7.110.1",
+    "epipebomb": "^1.0.0",
+    "fast-glob": "^3.3.2",
+    "form-data": "^4.0.0",
+    "mri": "^1.2.0",
+    "parents": "^1.0.1"
+  },
+  "optionalDependencies": {
+    "vscode-windows-ca-certs": "^0.3.0"
+  }
+}
