@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import {
   ThemeProvider,
   BaseStyles,
@@ -23,16 +23,18 @@ import {
   WorkflowIcon,
 } from "@primer/octicons-react";
 import { NavLink, Outlet, useLoaderData } from "react-router-dom";
+import { ApiContext } from "../main";
 
 export async function loader() {
-  const appState = {
-    name: "Variant Explorer",
-    author: "Tobias Fehrer",
-  };
+  const apiUrl = "http://localhost:41211";
+  const appState = await fetch(`${apiUrl}/environment`).then((res) =>
+    res.json()
+  );
   return { appState };
 }
 
 export default function AppRoot() {
+  const { apiUrl } = useContext(ApiContext);
   const { appState } = useLoaderData();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const returnFocusRef = useRef(null);
@@ -67,6 +69,7 @@ export default function AppRoot() {
                   <UnderlineNav aria-label="Process Work">
                     <UnderlineNav.Item
                       icon={FileDirectoryIcon}
+                      counter={appState.workspaces.length}
                       as={NavLink}
                       to="/"
                     >

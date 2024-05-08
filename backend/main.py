@@ -1,6 +1,9 @@
 import uvicorn
 
-from fastapi import FastAPI, HTTPException
+from multiprocessing import cpu_count, freeze_support
+
+from uuid import UUID
+from fastapi import FastAPI, HTTPException, Depends, WebSocket
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,6 +11,16 @@ from error_handlers import http_exception_handler, validation_exception_handler
 from api.routes.api import router as api_router
 from core.events import create_start_app_handler, create_stop_app_handler
 from middleware.http_middleware import http_middleware
+
+from cache.state import joblist
+
+from util.config.repo import (
+    ConfigurationRepository,
+    ConfigurationRepositoryFactory,
+)
+
+def get_config_repo():
+    return ConfigurationRepositoryFactory.get_config_repository()
 
 def get_application():
     app = FastAPI()
@@ -31,7 +44,7 @@ def add_event_handlers(app: FastAPI):
 
 def add_middleware(app: FastAPI):
     app.middleware("http")(http_middleware)
-    origins = ["http://localhost", "http://localhost:8080", "http://localhost:4444"]
+    origins = ["http://localhost", "http://localhost:8080", "http://localhost:4444", "http://localhost:5173"]
 
     app.add_middleware(
         CORSMiddleware,
@@ -48,11 +61,32 @@ def add_exception_handlers(app: FastAPI):
 
 app = get_application()
 
-@app.get("/info")
+@app.get("/environment")
+async def get_environment(repo: ConfigurationRepository = Depends(get_config_repo)):
+    conf = repo.get_configuration()
+    conf.count_workspaces = len(conf.workspaces)
+    return conf
+
+
+@app.get("/session")
 async def get_info():
     return {
-        "msg": "hello, world"
+      "can_download": False,
+      "can_upload": True,
+      "is_admin": True,
+      "log_visibility": True,
+      "session": "9bbc7ffe-dd2d-4174-ad1c-04731dcc2bee",
+      "status": "OK",
+      "user": "1"
     }
+
+@app.get("/jobs")
+async def get_jobs(workspace_id:UUID= None, job_name: str=None, status: str= None):
+  return joblist.filter_jobs(workspace_id=workspace_id, job_name= job_name, status= status)
+
+@app.get("/job")
+async def get_job(job_id: UUID):
+    return joblist.get_job(job_id)
 
 # Using FastAPI instance
 @app.get("/url-list")
@@ -60,8 +94,15 @@ def get_all_urls():
     url_list = [{"path": route.path, "name": route.name} for route in app.routes]
     return url_list
 
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"Message text was: {data}")
+
 if __name__ == "__main__":
-    # print(DEFAULT_LP_SOLVER_VARIANT)
+    freeze_support()
     uvicorn.run(
         "main:app", host="0.0.0.0", port=41211, workers=1, reload=True
     )

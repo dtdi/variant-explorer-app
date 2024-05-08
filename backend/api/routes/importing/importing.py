@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+
 import cache.cache as cache
 
 import pm4py.objects.log.importer.xes.importer as xes_importer
@@ -32,7 +33,7 @@ async def create_upload_file(
     content = "".join([line.decode("UTF-8") for line in file.file])
     event_log = xes_importer.deserialize(content)
     use_mp = (
-            len(event_log) > config_repo.get_configuration().min_traces_variant_detection_mp
+      len(event_log) > config_repo.get_configuration().min_traces_variant_detection_mp
     )
     info = calculate_event_log_properties(event_log, use_mp=use_mp)
     return info

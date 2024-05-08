@@ -7,24 +7,29 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import AppRoot, { loader as appStateLoader } from "./routes/AppRoot";
-import AppOverview, { loader as processesLoader } from "./pages/App/Overview";
+import AppOverview, { loader as workspacesLoader } from "./pages/App/Overview";
+import AppSettings, { loader as settingsLoader } from "./pages/App/Settings";
 
 import ErrorPage from "./pages/ErrorPage";
-import ProcessRoot, {
-  loader as processOverviewLoader,
-} from "./routes/ProcessRoot";
-import AggregateRoot, {
-  loader as aggregateLoader,
-} from "./routes/AggregateRoot";
+
+import WorkspaceRoot, {
+  loader as workspaceLoader,
+  action as workspaceRedirectAction,
+} from "./routes/WorkspaceRoot";
+
 import ProcessMapPage, {
   loader as processMapLoader,
 } from "./pages/Process/ProcessMapPage";
 import CaseExplorer, {
   loader as casesLoader,
 } from "./pages/Process/CaseExplorer";
-import ProcessAggregates, {
-  loader as aggregatesLoader,
-} from "./pages/Process/ProcessAggregates";
+
+const globalState = {
+  apiUrl: "http://localhost:41211",
+  jobs: {},
+};
+
+export const ApiContext = React.createContext();
 
 // todo replace with createMemoryRouter
 const router = createBrowserRouter([
@@ -35,45 +40,40 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        loader: processesLoader,
+        loader: workspacesLoader,
         element: <AppOverview />,
+      },
+      {
+        path: "/settings",
+        loader: settingsLoader,
+        element: <AppSettings />,
       },
     ],
   },
   {
-    element: <ProcessRoot />,
-    path: "/process/:processId",
-    loader: processOverviewLoader,
+    element: <WorkspaceRoot />,
+    path: "/workspace/:workspaceId/:aggregateId?",
+    loader: workspaceLoader,
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "/process/:processId/map",
+        path: "/workspace/:workspaceId/:aggregateId",
         loader: processMapLoader,
         element: <ProcessMapPage />,
       },
       {
-        path: "/process/:processId/cases",
+        path: "/workspace/:workspaceId/:aggregateId/cases",
         loader: casesLoader,
         element: <CaseExplorer />,
       },
-      {
-        path: "/process/:processId/aggregates",
-        loader: aggregatesLoader,
-        element: <ProcessAggregates />,
-      },
     ],
-  },
-  {
-    element: <AggregateRoot />,
-    path: "/aggregate/:aggregateId",
-    loader: aggregateLoader,
-    errorElement: <ErrorPage />,
-    children: [],
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ApiContext.Provider value={globalState}>
+      <RouterProvider router={router} />
+    </ApiContext.Provider>
   </React.StrictMode>
 );

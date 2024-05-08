@@ -3,6 +3,8 @@ import pickle
 from typing import Callable
 
 import cache.cache as cache
+import  cache.state as state
+
 from util.multiprocessing.pool_factory import PoolFactory
 
 from controllers import load_event_log
