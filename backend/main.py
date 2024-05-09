@@ -7,17 +7,17 @@ from fastapi import FastAPI, HTTPException, Depends, WebSocket
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from error_handlers import http_exception_handler, validation_exception_handler
+from error_handlers import http_exception_handler, validation_exception_handler, exception_handler
 from api.routes.api import router as api_router
 from core.events import create_start_app_handler, create_stop_app_handler
 from middleware.http_middleware import http_middleware
-
-from cache.state import joblist
 
 from util.config.repo import (
     ConfigurationRepository,
     ConfigurationRepositoryFactory,
 )
+
+import cache.cache as cache
 
 def get_config_repo():
     return ConfigurationRepositoryFactory.get_config_repository()
@@ -56,7 +56,7 @@ def add_middleware(app: FastAPI):
 
 def add_exception_handlers(app: FastAPI):
     app.add_exception_handler(HTTPException, http_exception_handler)
-    # app.add_exception_handler(Exception, exception_handler)
+    app.add_exception_handler(Exception, exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 app = get_application()
@@ -82,11 +82,11 @@ async def get_info():
 
 @app.get("/jobs")
 async def get_jobs(workspace_id:UUID= None, job_name: str=None, status: str= None):
-  return joblist.filter_jobs(workspace_id=workspace_id, job_name= job_name, status= status)
+  return cache.joblist.filter_jobs(workspace_id=workspace_id, job_name= job_name, status= status)
 
 @app.get("/job")
 async def get_job(job_id: UUID):
-    return joblist.get_job(job_id)
+    return cache.joblist.get_job(job_id)
 
 # Using FastAPI instance
 @app.get("/url-list")

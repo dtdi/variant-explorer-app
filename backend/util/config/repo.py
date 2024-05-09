@@ -6,73 +6,23 @@ from appdirs import user_config_dir
 import os
 import errno
 
+from models import Workspace,Configuration
+
 from datetime import datetime
 from uuid import UUID, uuid4
 
 from fastapi import logger
 
-from pydantic import BaseModel
 
 CONFIG_FILENAME = 'config.yaml'
 DEFAULT_TIMEOUT = 2
 APP_NAME = 'variant-explorer'
 COMPANY_NAME = 'dtdi'
 
-class WorkspaceModel(BaseModel):
-    id: UUID = None
-    name: str
-    description: str
-    created_at: datetime
-    can_edit: bool
-    can_delete: bool
-    log_file: str = None
-    log_name: str = None
-    type: str = None
-
-    def get_directory(self) -> Path: 
-        return Path(os.getcwd()).joinpath( 'resources', 'workspaces' , str(self.id) )
-
-    def ensure_directory(self):
-        os.makedirs( self.get_directory() , exist_ok=True )
 
 
-class Configuration():
-    workspaces: list[WorkspaceModel]
 
-    def __init__(self, name: str ="Variant Explorer", author: str="Tobias Fehrer",
-                  authenticationMode: str="also-implicit", authorizationMode: str="bypassed",
-                  enableDownload: bool=True, maxUploadSize: int=1073741824, pm4pyVersion: str="2.2.24",
-                  sessionDuration: int=86400, version: str="1.0.27",
-                   workspaces: list[WorkspaceModel] = [], timeout=DEFAULT_TIMEOUT):
-        self.workspaces = workspaces
-        self.timeout = timeout
-        self.name = name
-        self.author = author  
-        self.authenticationMode = authenticationMode
-        self.authorizationMode = authorizationMode
-        self.enableDownload = enableDownload
-        self.maxUploadSize = maxUploadSize
-        self.pm4pyVersion = pm4pyVersion
-        self.sessionDuration = sessionDuration
-        self.version = version
-        
 
-    def get_workspace(self, workspace_id: UUID) -> WorkspaceModel:
-        for w in self.workspaces:
-            if w.id == workspace_id:
-                return w
-
-    def add_workspace(self, workspace: WorkspaceModel):
-        workspace.ensure_directory()
-        self.workspaces.append(workspace)
-
-    def update_workspace(self, workspace: WorkspaceModel):
-        for i, w in enumerate(self.workspaces):
-            if w.id == workspace.id:
-                self.workspaces[i] = workspace
-
-    def delete_workspace(self, workspace_id: UUID):
-        self.workspaces = [w for w in self.workspaces if w.id != workspace_id]
       
 
 
@@ -100,19 +50,8 @@ class FileBasedConfigurationRepository(ConfigurationRepository):
         logger.logger.info(f"Loading configuration from file {directory}")
 
         if not Path(os.path.join(directory, CONFIG_FILENAME)).is_file():
-            app_config = {
-              "name":"Variant Explorer",
-              "author": "Tobias Fehrer",
-              "authenticationMode":"also-implicit",
-              "authorizationMode":"bypassed",
-              "enableDownload":True,
-              "maxUploadSize":1073741824,
-              "pm4pyVersion":"2.2.24",
-              "sessionDuration":86400,
-              "version":"1.0.27"            
-            }
             workspaces = []
-            workspaces.append(WorkspaceModel(
+            workspaces.append(Workspace(
                 id=uuid4(),
                 name='BPI Challenge 2019 Sample',
                 description='Default Workspace',
@@ -122,9 +61,8 @@ class FileBasedConfigurationRepository(ConfigurationRepository):
                 log_name="bpi_challenge_2019_sample",
                 type="xes", 
                 log_file="bpi_challenge_2019_sample.xes", 
-                
               ))
-            return Configuration(**app_config, workspaces=workspaces)
+            return Configuration( author="Tobias Fehrer", name="Variant Explorer" , workspaces=workspaces)
         with open(os.path.join(directory, CONFIG_FILENAME), 'r', encoding='utf-8') as f:
             configuation = yaml.load(f, Loader=yaml.Loader)
             return configuation

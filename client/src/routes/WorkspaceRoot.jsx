@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ThemeProvider,
   BaseStyles,
@@ -12,6 +12,7 @@ import {
   StateLabel,
   BranchName,
   Link,
+  Breadcrumbs,
 } from "@primer/react";
 import { Hidden, PageHeader } from "@primer/react/experimental";
 import {
@@ -23,6 +24,7 @@ import {
   FileDiffIcon,
   GearIcon,
   GraphIcon,
+  ReplyIcon,
   ThreeBarsIcon,
   TriangleDownIcon,
   WorkflowIcon,
@@ -50,47 +52,49 @@ export async function loader({ params }) {
 
   const apiUrl = "http://localhost:41211";
 
-  const { workspace, aggregate } = await fetch(
+  const data = await fetch(
     `${apiUrl}/workspaces/getWorkspace/${workspaceId}/${aggregateId}`
   ).then((res) => res.json());
 
-  return { workspace, aggregate };
+  return data;
 }
 
+export const WorkspaceContext = React.createContext();
+
 export default function WorkspaceRoot() {
-  const { workspace, aggregate } = useLoaderData();
+  const { workspace, aggregate, stats, breadcrumbs } = useLoaderData();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const returnFocusRef = useRef(null);
   const navigate = useNavigate();
 
   return (
     <ThemeProvider>
       <BaseStyles>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateRows: "auto 1fr auto",
-            height: "100vh",
-          }}
-        >
-          <PageLayout containerWidth="full">
+        <WorkspaceContext.Provider value={{ workspace, aggregate, stats }}>
+          <PageLayout sx={{ height: "100vh" }} containerWidth="xlarge">
             <PageLayout.Header>
               <PageHeader>
-                <PageHeader.ContextArea>
-                  <PageHeader.ParentLink href="/">Home</PageHeader.ParentLink>
-                </PageHeader.ContextArea>
                 <PageHeader.TitleArea>
                   <PageHeader.LeadingAction>
                     <IconButton
-                      ref={returnFocusRef}
-                      icon={ThreeBarsIcon}
+                      icon={ReplyIcon}
                       aria-label="Menu"
                       variant="invisible"
-                      onClick={() => setSidebarOpen(true)}
+                      onClick={() => navigate("/")}
                     />
                   </PageHeader.LeadingAction>
-                  <PageHeader.Title>{workspace.name}</PageHeader.Title>
+                  <Breadcrumbs>
+                    {breadcrumbs.map((b) => (
+                      <Breadcrumbs.Item
+                        onClick={() =>
+                          navigate(`/workspace/${workspace.id}/${b.id}`)
+                        }
+                        key={b.id}
+                      >
+                        {b.name}
+                      </Breadcrumbs.Item>
+                    ))}
+                  </Breadcrumbs>
                   <PageHeader.Actions>
                     <IconButton aria-label="Workflows" icon={WorkflowIcon} />
                     <IconButton aria-label="Insights" icon={GraphIcon} />
@@ -102,44 +106,32 @@ export default function WorkspaceRoot() {
                 </PageHeader.TitleArea>
                 <PageHeader.Description>
                   <Text sx={{ fontSize: 1, color: "fg.muted" }}>
-                    <Link
-                      as={RouterLink}
-                      to="/workspace/1"
-                      sx={{ fontWeight: "bold" }}
-                    >
-                      broccolinisoup
-                    </Link>{" "}
-                    wants to merge 3 commits into{" "}
-                    <BranchName href="https://github.com/primer/react">
-                      main
-                    </BranchName>{" "}
-                    from{" "}
-                    <BranchName href="https://github.com/primer/react">
-                      bs/pageheader-title
-                    </BranchName>
+                    Part of the <BranchName>{workspace.name}</BranchName>{" "}
+                    <BranchName>{stats.number_cases} cases</BranchName>{" "}
+                    <BranchName>{stats.number_events} events</BranchName>
                   </Text>
                 </PageHeader.Description>
                 <PageHeader.Navigation>
                   <UnderlineNav aria-label="Process Overview">
                     <UnderlineNav.Item
                       as={NavLink}
-                      to={`/process/${workspace.id}/map`}
+                      to={`/workspace/${workspace.id}/${aggregate._identifier}`}
                       icon={WorkflowIcon}
                     >
                       Process Map
                     </UnderlineNav.Item>
                     <UnderlineNav.Item
                       as={NavLink}
-                      to={`/process/${workspace.id}/cases`}
-                      counter={workspace.stats?.number_cases}
+                      to={`/workspace/${workspace.id}/${aggregate._identifier}/cases`}
+                      counter={stats.number_cases}
                       icon={BriefcaseIcon}
                     >
                       Cases
                     </UnderlineNav.Item>
                     <UnderlineNav.Item
                       as={NavLink}
-                      to={`/process/${workspace.id}/aggregates`}
-                      counter={workspace.stats?.number_aggregates}
+                      to={`/workspace/${workspace.id}/${aggregate._identifier}/aggregates`}
+                      counter={stats.number_aggregates}
                       icon={ChecklistIcon}
                     >
                       Aggregates
@@ -150,7 +142,7 @@ export default function WorkspaceRoot() {
             </PageLayout.Header>
             <Outlet />
           </PageLayout>
-        </Box>
+        </WorkspaceContext.Provider>
       </BaseStyles>
     </ThemeProvider>
   );

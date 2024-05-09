@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 
-backend/resources/workspaces
+backend/resources/workspaces/

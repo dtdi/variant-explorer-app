@@ -23,6 +23,9 @@ import ProcessMapPage, {
 import CaseExplorer, {
   loader as casesLoader,
 } from "./pages/Process/CaseExplorer";
+import ProcessAggregates, {
+  loader as aggregatesLoader,
+} from "./pages/Process/ProcessAggregates";
 
 const globalState = {
   apiUrl: "http://localhost:41211",
@@ -65,6 +68,11 @@ const router = createBrowserRouter([
         path: "/workspace/:workspaceId/:aggregateId/cases",
         loader: casesLoader,
         element: <CaseExplorer />,
+      },
+      {
+        path: "/workspace/:workspaceId/:aggregateId/aggregates",
+        loader: aggregatesLoader,
+        element: <ProcessAggregates />,
       },
     ],
   },

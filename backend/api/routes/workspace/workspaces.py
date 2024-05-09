@@ -2,12 +2,14 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from datetime import datetime
 from uuid import UUID, uuid4
-from cache.state import joblist, Job
+import cache.cache as cache
 from typing import Union
 import pandas as pd
 
+from models import Workspace, Job, Stats
 
-import os
+
+import cache.cache as cache
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -15,7 +17,6 @@ from pydantic import BaseModel
 from util.config.repo import (
     ConfigurationRepository,
     ConfigurationRepositoryFactory,
-    WorkspaceModel
 )
 
 from controllers.init_event_log import import_event_log, load_workspace
@@ -40,7 +41,7 @@ class WorkspaceMin(BaseModel):
 async def create_workspace(d: WorkspaceInput, repo: ConfigurationRepository = Depends(get_config_repo)):
     conf = repo.get_configuration()
     if not d.id:
-      model = WorkspaceModel(
+      model = Workspace(
           id=uuid4(),
           name=d.name,
           description=d.description,
@@ -75,30 +76,31 @@ async def get_workspaces(repo: ConfigurationRepository = Depends(get_config_repo
     return conf.workspaces
 
 @router.get("/getWorkspace/{workspace_id}/{aggregate_id}")
-async def get_workspaces(workspace_id: UUID, 
+async def get_workspace(workspace_id: UUID, 
                          aggregate_id: Union[UUID,str], 
                          background_tasks: BackgroundTasks,
                          repo: ConfigurationRepository = Depends(get_config_repo)):
     conf = repo.get_configuration()
-    workspace = conf.get_workspace(workspace_id=workspace_id)
+    workspace: Workspace = conf.get_workspace(workspace_id=workspace_id)
+
+    conf.current_workspace_id = workspace.id
+    repo.save_configuration(conf)
     
     load_job = Job(
-        workspace_id=workspace_id, 
-        job_name="load_workspace",
-        job_data={ "directory": workspace.get_directory()}
-      )
+      workspace_id=workspace_id, 
+      job_name="load_workspace",
+      job_data={ "workspace": workspace }
+    )
 
-    joblist.add_job( load_job )
+    cache.joblist.add_job( load_job )
+    await load_workspace(load_job)
+    print(aggregate_id, workspace_id)
+    tree = cache.tree
+    node = tree.get_node(str(aggregate_id))
+    breadcrumbs, level = tree.get_breadcrumbs(node.identifier)
+    cache.current_aggregate = node.data
 
-    background_tasks.add_task(load_workspace, load_job)
-
-    df_meta = pd.read_pickle(Path(workspace.get_directory()).joinpath("df_meta.pkl"))
-    df_meta.drop(columns=["mean","min","25%","50%","75%", "max", "std"], inplace=True)
-    cols = {}
-    for a,b in df_meta.iterrows():
-        cols[a] = dict(b)
-
-    return { "workspace": workspace, "aggregate": str(cols) }
+    return { "workspace": workspace, "aggregate": node, "stats": node.data.stats,"breadcrumbs": breadcrumbs, "level": level}
 
 @router.post("/initLog") 
 async def init_log(d: WorkspaceMin, background_tasks: BackgroundTasks, repo: ConfigurationRepository = Depends(get_config_repo), ):
@@ -107,9 +109,9 @@ async def init_log(d: WorkspaceMin, background_tasks: BackgroundTasks, repo: Con
     workspace.ensure_directory()
 
     import_job = Job(job_name="init_log", workspace_id=workspace.id, 
-                     job_data={ "log_file": workspace.log_file, "directory": workspace.get_directory() })
+                     job_data={ "log_file": workspace.log_file, "workspace": workspace })
 
-    joblist.add_job( import_job )
+    cache.joblist.add_job( import_job )
     background_tasks.add_task(import_event_log, import_job)
 
     return import_job

@@ -1,0 +1,59 @@
+
+from fastapi import APIRouter, Depends, BackgroundTasks
+from datetime import datetime
+from uuid import UUID, uuid4
+from typing import Union
+from models import Aggregate, Tree
+import pmxplain.algo.split.split as split
+
+import cache.cache as cache
+
+from pydantic import BaseModel
+
+from util.config.repo import (
+    ConfigurationRepository,
+    ConfigurationRepositoryFactory,
+)
+
+from models import Workspace, Job, Aggregate
+
+router = APIRouter(tags=["aggregates"], prefix="/aggregates")
+
+def get_config_repo():
+    return ConfigurationRepositoryFactory.get_config_repository()
+
+class AggregateInput(BaseModel):
+    id: Union[str,UUID] = None
+    workspace_id: UUID
+    name: str
+    description: str = None
+
+@router.post("/editAggregate")
+async def edit_aggregate(d: AggregateInput):
+  return { "msg": "editAggregate" }
+
+class SplitInput(BaseModel):
+   id: Union[str,UUID]
+   split_type: str = "groupBy"
+   by: str
+
+@router.post("/splitAggregate")
+async def split_aggregate(d: SplitInput):
+  tree: Tree = cache.tree
+  node = tree.get_node(d.id)
+
+  if d.split_type == "groupBy":
+    splitter = split.GroupBySplit([d.by])
+  else:
+    splitter = split.GroupBySplit([d.by])
+
+  tree.split_node(node, splitter=splitter)
+  tree.save_to_file(cache.current_workspace.get_file("tree.json"))
+
+@router.get("/{aggregate_id}")
+async def get_aggregates(aggregate_id: Union[str,UUID] = None):
+    tree = cache.tree
+    if not tree:
+        return { "msg": "No tree loaded" }
+    
+    return { "aggregates": tree.to_dict(aggregate_id,with_data=True)}

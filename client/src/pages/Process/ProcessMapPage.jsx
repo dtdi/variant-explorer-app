@@ -1,4 +1,4 @@
-import { PageLayout } from "@primer/react";
+import { Box, PageLayout } from "@primer/react";
 
 import { useLoaderData } from "react-router-dom";
 
@@ -9,6 +9,7 @@ import {
   forceX,
   forceY,
 } from "d3-force";
+import { stratify, tree } from "d3-hierarchy";
 
 import ReactFlow, {
   Background,
@@ -23,38 +24,33 @@ import ReactFlow, {
 
 import "reactflow/dist/style.css";
 
+export async function action({ params }) {}
+
 export async function loader({ params }) {
-  const processMap = {
-    nodes: [
-      {
-        id: "1",
-        data: { label: "Hello" },
-        position: { x: 0, y: 0 },
-        type: "input",
-      },
-      {
-        id: "2",
-        data: { label: "World" },
-        position: { x: 0, y: 0 },
-      },
-      {
-        id: "3",
-        data: { label: "End" },
-        position: { x: 0, y: 0 },
-      },
-    ],
-    edges: [
-      { id: "e1-2", source: "1", target: "2" },
-      { id: "e2-3", source: "2", target: "3" },
-      { id: "e1-3", source: "1", target: "3" },
-      { id: "e1-1", source: "1", target: "1" },
-    ],
+  const { workspaceId, aggregateId } = params;
+
+  const apiUrl = "http://localhost:41211";
+
+  const diagramRequest = {
+    workspace: workspaceId,
+    aggregate: aggregateId,
+    activitiesSlider: 0.02,
+    pathsSlider: 0.02,
+    decoration: "freq",
   };
-  return new Promise((resolve) => setTimeout(resolve({ processMap }), 300));
+
+  const { nodes, edges } = await axios
+    .post(`${apiUrl}/log/diagram`, diagramRequest)
+    .then((res) => res.data);
+
+  return { nodes, edges };
 }
 
 import { quadtree } from "d3-quadtree";
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
+import { WorkspaceContext } from "../../routes/WorkspaceRoot";
+import axios from "axios";
+import { Form } from "formik";
 
 const collide = function () {
   let nodes = [];
@@ -178,179 +174,9 @@ const useLayoutedElements = () => {
   }, [initialised]);
 };
 
-const LayoutFlow = () => {
-  const [nodes, , onNodesChange] = useNodesState([
-    {
-      id: "Record Goods Receipt",
-      data: { label: "Record Goods Receipt", value: 14697 },
-      position: { x: 0, y: 0 },
-    },
-    {
-      id: "▶",
-      data: { label: "▶", value: 12000 },
-      position: { x: 0, y: 20 },
-      type: "input",
-    },
-    {
-      id: "Create Purchase Order Item",
-      data: { label: "Create Purchase Order Item", value: 12000 },
-      position: { x: 0, y: 40 },
-    },
-    {
-      id: "■",
-      data: { label: "■", value: 12000 },
-      position: { x: 0, y: 60 },
-      type: "output",
-    },
-    {
-      id: "Record Invoice Receipt",
-      data: { label: "Record Invoice Receipt", value: 10866 },
-      position: { x: 0, y: 80 },
-    },
-    {
-      id: "Vendor creates invoice",
-      data: { label: "Vendor creates invoice", value: 10423 },
-      position: { x: 0, y: 100 },
-    },
-    {
-      id: "Clear Invoice",
-      data: { label: "Clear Invoice", value: 9254 },
-      position: { x: 0, y: 120 },
-    },
-    {
-      id: "Record Service Entry Sheet",
-      data: { label: "Record Service Entry Sheet", value: 7534 },
-      position: { x: 0, y: 140 },
-    },
-    {
-      id: "Remove Payment Block",
-      data: { label: "Remove Payment Block", value: 2740 },
-      position: { x: 0, y: 160 },
-    },
-  ]);
-  const [edges, , onEdgesChange] = useEdgesState([
-    {
-      id: "Clear Invoice-Record Invoice Receipt",
-      source: "Clear Invoice",
-      target: "Record Invoice Receipt",
-    },
-    { id: "Clear Invoice-■", source: "Clear Invoice", target: "■" },
-    {
-      id: "Create Purchase Order Item-Record Goods Receipt",
-      source: "Create Purchase Order Item",
-      target: "Record Goods Receipt",
-    },
-    {
-      id: "Create Purchase Order Item-Vendor creates invoice",
-      source: "Create Purchase Order Item",
-      target: "Vendor creates invoice",
-    },
-    {
-      id: "Create Purchase Order Item-■",
-      source: "Create Purchase Order Item",
-      target: "■",
-    },
-    {
-      id: "Record Goods Receipt-Record Goods Receipt",
-      source: "Record Goods Receipt",
-      target: "Record Goods Receipt",
-    },
-    {
-      id: "Record Goods Receipt-Record Invoice Receipt",
-      source: "Record Goods Receipt",
-      target: "Record Invoice Receipt",
-    },
-    {
-      id: "Record Goods Receipt-Record Service Entry Sheet",
-      source: "Record Goods Receipt",
-      target: "Record Service Entry Sheet",
-    },
-    {
-      id: "Record Goods Receipt-Remove Payment Block",
-      source: "Record Goods Receipt",
-      target: "Remove Payment Block",
-    },
-    {
-      id: "Record Goods Receipt-Vendor creates invoice",
-      source: "Record Goods Receipt",
-      target: "Vendor creates invoice",
-    },
-    {
-      id: "Record Goods Receipt-■",
-      source: "Record Goods Receipt",
-      target: "■",
-    },
-    {
-      id: "Record Invoice Receipt-Clear Invoice",
-      source: "Record Invoice Receipt",
-      target: "Clear Invoice",
-    },
-    {
-      id: "Record Invoice Receipt-Record Goods Receipt",
-      source: "Record Invoice Receipt",
-      target: "Record Goods Receipt",
-    },
-    {
-      id: "Record Invoice Receipt-Record Invoice Receipt",
-      source: "Record Invoice Receipt",
-      target: "Record Invoice Receipt",
-    },
-    {
-      id: "Record Invoice Receipt-Remove Payment Block",
-      source: "Record Invoice Receipt",
-      target: "Remove Payment Block",
-    },
-    {
-      id: "Record Invoice Receipt-Vendor creates invoice",
-      source: "Record Invoice Receipt",
-      target: "Vendor creates invoice",
-    },
-    {
-      id: "Record Invoice Receipt-■",
-      source: "Record Invoice Receipt",
-      target: "■",
-    },
-    {
-      id: "Record Service Entry Sheet-Record Goods Receipt",
-      source: "Record Service Entry Sheet",
-      target: "Record Goods Receipt",
-    },
-    {
-      id: "Record Service Entry Sheet-Record Service Entry Sheet",
-      source: "Record Service Entry Sheet",
-      target: "Record Service Entry Sheet",
-    },
-    {
-      id: "Remove Payment Block-Clear Invoice",
-      source: "Remove Payment Block",
-      target: "Clear Invoice",
-    },
-    {
-      id: "Remove Payment Block-■",
-      source: "Remove Payment Block",
-      target: "■",
-    },
-    {
-      id: "Vendor creates invoice-Record Goods Receipt",
-      source: "Vendor creates invoice",
-      target: "Record Goods Receipt",
-    },
-    {
-      id: "Vendor creates invoice-Record Invoice Receipt",
-      source: "Vendor creates invoice",
-      target: "Record Invoice Receipt",
-    },
-    {
-      id: "▶-Create Purchase Order Item",
-      source: "▶",
-      target: "Create Purchase Order Item",
-    },
-    {
-      id: "▶-Vendor creates invoice",
-      source: "▶",
-      target: "Vendor creates invoice",
-    },
-  ]);
+const LayoutFlow = ({ n, e }) => {
+  const [nodes, , onNodesChange] = useNodesState(n);
+  const [edges, , onEdgesChange] = useEdgesState(e);
   const [initialised, { toggle, isRunning }] = useLayoutedElements();
 
   return (
@@ -359,6 +185,7 @@ const LayoutFlow = () => {
       edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
+      fitView
     >
       <Background />
       <Controls />
@@ -374,12 +201,29 @@ const LayoutFlow = () => {
 };
 
 export default function ProcessMapPage() {
-  const { processMap } = useLoaderData();
+  const { nodes, edges } = useLoaderData();
+  console.log(nodes, edges);
+  const { workspace, aggregate } = useContext(WorkspaceContext);
+
   return (
-    <PageLayout.Content sx={{ height: "400px" }}>
-      <ReactFlowProvider>
-        <LayoutFlow />
-      </ReactFlowProvider>
-    </PageLayout.Content>
+    <>
+      <PageLayout.Pane>
+        <Box>{workspace.name}</Box>
+      </PageLayout.Pane>
+      <PageLayout.Content>
+        <Box
+          sx={{
+            border: "1px solid",
+            borderRadius: 2,
+            borderColor: "border.default",
+            height: 400,
+          }}
+        >
+          <ReactFlowProvider>
+            <LayoutFlow n={nodes} e={edges} />
+          </ReactFlowProvider>
+        </Box>
+      </PageLayout.Content>
+    </>
   );
 }
