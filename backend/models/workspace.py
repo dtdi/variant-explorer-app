@@ -31,7 +31,7 @@ class Workspace(BaseModel):
             type=col.category,
             description=""
         )
-        column.infer_aggregate_column_type()
+        column.init()
         self.columns.append( column )
 
     def get_column(self, column_id: UUID) -> Column:

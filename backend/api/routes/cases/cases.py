@@ -29,7 +29,7 @@ async def get_cases(c: CaseInput):
 
     all_columns: list[Column] = cache.current_aggregate.columns
 
-    df.rename(columns={col.name: col.name_tech for col in all_columns}, inplace=True,)
+    df = df.rename(columns={col.name: col.name_tech for col in all_columns}, inplace=False,)
     
     start_index = (c.page) * c.page_size
     end_index = start_index + c.page_size
@@ -39,13 +39,19 @@ async def get_cases(c: CaseInput):
   
     columns = []
     for c_idx in c.columns:
-        column = next((col for col in all_columns if col.name_tech == c_idx), None)
-        if column:
-            column = {
-            'header': column.display_name,
-            'field': str(column.name_tech),
-            }
-            columns.append(column)
+        agg_col = next((col for col in all_columns if col.name_tech == c_idx), None)
+        if agg_col is None:
+            continue
+        column = {
+          'header': agg_col.display_name,
+          'field': str(agg_col.name_tech),
+          'align': 'start' if agg_col.type == 'string' else 'end',
+          'display_as': "badge" if agg_col.distinct_values < 10 else "text",
+          'rowHeader': (agg_col.event_log_column == 'case_id')
+        }
+        columns.append(column)
+        out[agg_col.name_tech] = out[agg_col.name_tech].map(agg_col.mutateValues)
+
 
     rows = json.loads(out.to_json(orient='records'))
 

@@ -1,8 +1,8 @@
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from datetime import datetime
 from uuid import UUID, uuid4
-from typing import Union
+from typing import Union, Optional
 import pm4py
 import json
 import pandas as pd
@@ -10,8 +10,17 @@ from pm4py.util import constants
 import cache.cache as cache
 from pydantic import BaseModel
 
+from util.config.repo import (
+    ConfigurationRepository,
+    ConfigurationRepositoryFactory,
+)
+
 
 router = APIRouter(tags=["columns"], prefix="/columns")
+
+
+def get_config_repo():
+    return ConfigurationRepositoryFactory.get_config_repository()
 
 @router.get("/getColumns/{workspace_id}")
 async def get_columns(workspace_id: UUID):
@@ -33,10 +42,11 @@ async def get_column_by_name(workspace_id: UUID, column_name: str):
 
 class ColumnInput(BaseModel):
     id: UUID
-    name: str
+    analysis_category: Optional[str]
+    event_log_column: Optional[str]
     display_name: str
     type: str
-    description: str = None
+    description: Optional[str] = None
 
 @router.post("/editColumn/{workspace_id}")
 async def edit_column(workspace_id: UUID, column: ColumnInput,repo: ConfigurationRepository = Depends(get_config_repo)):
@@ -44,15 +54,17 @@ async def edit_column(workspace_id: UUID, column: ColumnInput,repo: Configuratio
 
     workspace = cache.current_workspace
     col = workspace.get_column(column.id)
-    col.name = column.name
+
     col.display_name = column.display_name
     col.type = column.type
     col.description = column.description
+    col.analysis_category = column.analysis_category
+    col.event_log_column = column.event_log_column
     col.infer_aggregate_column_type()
-    workspace.update_column(column)
 
-    model = conf.get_workspace(workspace.id)
-    conf.update_workspace(model)
+    workspace.update_column(col)
+
+    conf.update_workspace(workspace)
     repo.save_configuration(conf)
-    return col
+    return workspace.columns
 

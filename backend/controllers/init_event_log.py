@@ -34,6 +34,7 @@ def _import_event_log(log_path: str, workspace: Workspace):
     conf = repo.get_configuration()
     conf.update_workspace(workspace)
     repo.save_configuration(conf)
+    print("config saved")
 
     tree = Tree()
     aggregate = Aggregate(
@@ -46,7 +47,6 @@ def _import_event_log(log_path: str, workspace: Workspace):
     aggregate.save()
     tree.create_node("root", "root", data=aggregate)
     tree.save_to_file(workspace.get_file("tree.json"))
-   
    
   except Exception as e:
     traceback.print_exc()

@@ -9,6 +9,7 @@ from pmxplain import describe_meta
 from models.column import AggregateColumn
 from models.workspace import Workspace
 import os
+import cache.cache as cache
 
 class Stats(BaseModel):
     number_cases: int = 0
@@ -34,18 +35,23 @@ class Aggregate(BaseModel):
         if self.meta is None:
             self.meta = describe_meta(self.cases)
 
-    def initialize(self,workspace: Workspace):
+    def initialize(self,workspace: Workspace=None):
+        if(workspace is None):
+            workspace = cache.current_workspace
         self.ensure_meta()
         self.stats.number_cases = len(self.cases)
         self.columns = []
+        cases = self.cases.reset_index()
         for series in self.meta.itertuples(index=True):
             col = workspace.get_column_by_name(series.Index)
+
             column = AggregateColumn(
                 id=uuid4(),
                 name=col.name,
                 name_tech=col.name_tech,
                 display_name=col.display_name,
                 type=col.type,
+                column_type=col.aggregate_column_type,
                 description="",
                 distinct_values=series.distinct_values,
                 fraction_of_distinct_values=series.fraction_of_distinct_values,
@@ -53,9 +59,11 @@ class Aggregate(BaseModel):
                 has_nan_values=series.has_nan_values,
                 recommended_conversion=series.recommended_conversion,
                 bin_sizes=series.bin_sizes,
-                treat_as=series.treat_as
-
+                treat_as=series.treat_as,
+                event_log_column=col.event_log_column,
+                analysis_category=col.analysis_category,
             )
+            column.init( cases)
             self.columns.append( column )
         
 

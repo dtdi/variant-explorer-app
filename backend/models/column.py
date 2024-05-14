@@ -1,11 +1,11 @@
 
 from pydantic import BaseModel
-from typing import Union
+from typing import Optional
 from uuid import UUID, uuid4
-from datetime import datetime
-from pathlib import Path
-import shutil
-import os
+
+
+
+MAX_BINS_TO_HANDLE = 30
 
 class Column(BaseModel):
     id: UUID = uuid4()
@@ -14,41 +14,63 @@ class Column(BaseModel):
     display_name: str
     description: str
     type: str = None
-    event_log_column: Union[None,str] = None
-    analysis_category:  Union[None,str] = None
-    aggregate_column_type:  Union[None,str] = None
+    event_log_column: Optional[str] = None
+    analysis_category:  Optional[str] = None
+    aggregate_column_type:  Optional[str] = None
 
     def init(self):
         self.infer_aggregate_column_type()
-        if self.name is 'case:concept:name':
-            self.event_log_column = 'case:concept:name'
-        
+        if self.name == 'case:concept:name':
+            self.event_log_column = 'case_id'
+        if self.name == 'case:@@caseDuration':
+            self.event_log_column = 'duration'
+        if self.name == 'case:@@startTime':
+            self.event_log_column = 'start_time'
+        if self.name == 'case:@@endTime':
+            self.event_log_column = 'end_time'
+        if self.name == 'case:@@service_time':
+            self.event_log_column = 'service_time'
+        if self.name == 'case:@@waiting_time':
+            self.event_log_column = 'waiting_time'
+        if self.name == 'case:@@sojourn_time':
+            self.event_log_column = 'sojourn_time'
+        if self.name == 'case:##len':
+            self.event_log_column = 'length'
+        if self.name == 'case:##variant_str':
+            self.event_log_column = 'variant'
 
     def infer_aggregate_column_type(self):
         if self.type == "bool":
-            self.aggregate_column_type = BoolColumn
+            self.aggregate_column_type = "BoolColumn"
         elif self.type == "string":
-            self.aggregate_column_type = StringColumn
+            self.aggregate_column_type = "StringColumn"
         elif self.type == "numeric":
-            self.aggregate_column_type = NumericColum
+            self.aggregate_column_type = "NumericColum"
         elif self.type == "datetime":
-            self.aggregate_column_type = DateTimeColumn
+            self.aggregate_column_type = "DateTimeColumn"
         elif self.type == "categorical":
-            self.aggregate_column_type = CategoricalColumn
+            self.aggregate_column_type = "CategoricalColumn"
         elif self.type == "period":
-            self.aggregate_column_type = PeriodColumn
+            self.aggregate_column_type = "PeriodColumn"
         elif self.type == "timedelta":
-            self.aggregate_column_type = TimedeltaColumn
+            self.aggregate_column_type = "TimedeltaColumn"
         elif self.type == "interval":
-            self.aggregate_column_type = IntervalColumn
+            self.aggregate_column_type = "IntervalColumn"
         else:
-            self.aggregate_column_type = AggregateColumn
-        
-        self.aggregate_column_type = str((self.aggregate_column_type.__class__.__name__))
-        
+            self.aggregate_column_type = "AggregateColumn"
 
-
-class AggregateColumn(Column):
+class AggregateColumn(BaseModel):
+    id: UUID = uuid4()
+    ref: Column = None
+    name: Optional[str] = None
+    name_tech: int = 0
+    display_name: Optional[str] = None
+    description: Optional[str] = None
+    type: str = None
+    column_type: str = None
+    event_log_column: Optional[str] = None
+    analysis_category:  Optional[str] = None
+    split_type: Optional[str] = None
     has_nan_values: bool = False
     missing_values: int = 0
     distinct_values: int = 0
@@ -56,27 +78,16 @@ class AggregateColumn(Column):
     recommended_conversion: str = None
     bin_sizes: int = 0
     treat_as: str = None
+    head: Optional[list] = []
+    value_dict: Optional[dict] = None
 
-class StringColumn(AggregateColumn):
-    pass
-
-class BoolColumn(AggregateColumn):
-    pass
-
-class NumericColum(AggregateColumn):
-    pass
-
-class DateTimeColumn(AggregateColumn):
-    pass
-
-class CategoricalColumn(AggregateColumn):
-    pass
-
-class PeriodColumn(AggregateColumn):
-    pass
-
-class TimedeltaColumn(AggregateColumn):
-    pass
-
-class IntervalColumn(AggregateColumn):
-    pass
+    def init(self, cases):
+      self.head = cases[self.name].sample(10).tolist()
+      if self.distinct_values <= MAX_BINS_TO_HANDLE:
+        self.value_dict = cases[self.name].value_counts().to_dict()
+    
+    def mutateValues(self, x): 
+      if self.type == 'datetime':
+        return str(x)
+      else:
+        return x

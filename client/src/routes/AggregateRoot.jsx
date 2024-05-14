@@ -108,7 +108,7 @@ export default function WorkspaceRoot() {
                       aria-label="workspace Settings"
                       icon={GearIcon}
                       onClick={() => {
-                        navigate(`/settings/${workspace.id}`);
+                        navigate(`/workspace/settings/${workspace.id}`);
                       }}
                     />
                   </PageHeader.Actions>

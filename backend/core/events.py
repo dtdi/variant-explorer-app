@@ -31,6 +31,7 @@ def create_start_app_handler(
         conf = repo.get_configuration()
         cache.joblist = JobList()        
         print('loaded configuration', conf.author)
+        repo.save_configuration(conf)
         if conf.current_workspace_id is not None:
             ws = conf.get_workspace(conf.current_workspace_id)
 
@@ -40,7 +41,6 @@ def create_start_app_handler(
 
         # create process pool
         PoolFactory.instance()
-        repo.save_configuration(conf)
     return start_app
 
 

@@ -1,4 +1,4 @@
-import { Box, PageLayout } from "@primer/react";
+import { Box, Label, PageLayout } from "@primer/react";
 import { Blankslate, DataTable, Table } from "@primer/react/drafts";
 import { useContext, useEffect, useState } from "react";
 import { useLoaderData } from "react-router-dom";
@@ -15,29 +15,37 @@ export default function ProcessOverview() {
   const [columns, setColumns] = useState();
   const [loading, setLoading] = useState(true);
   const [the_case, setCase] = useState(null);
-  const [pageIndex, setPageIndex] = useState(0);
+  const [pidx, setPageIndex] = useState(0);
+
+  const transformColumns = (columns) => {
+    return columns.map((column) => {
+      if (column.display_as === "badge") {
+        column.renderCell = (value) => {
+          return <Label>{value[column.field]}</Label>;
+        };
+      }
+      return column;
+    });
+  };
 
   useEffect(() => {
     setLoading(true);
     const request = {
       workspace_id: workspace.id,
       aggregate_id: aggregate._identifier,
-      page: pageIndex,
+      page: pidx,
       page_size: 10,
     };
-
-    console.log(request);
 
     axios.post(`${apiUrl}/cases`, request).then((res) => {
       setCases(res.data.cases);
       setTableData(res.data.table_data);
-      setColumns(res.data.columns);
-      setLoading(false);
-      setPageIndex(res.data.table_data.page);
-    });
-  }, [pageIndex]);
 
-  const data = cases;
+      setColumns(transformColumns(res.data.columns));
+
+      setLoading(false);
+    });
+  }, [pidx]);
 
   if (loading) {
     return (
@@ -55,23 +63,17 @@ export default function ProcessOverview() {
       <Table.Container sx={{ flexGrow: 1 }}>
         <Table.Title>Cases</Table.Title>
         <Table.Subtitle>afasfasf</Table.Subtitle>
-
-        {loading ? (
-          <Table.Skeleton columns={columns} />
-        ) : (
-          <>
-            <DataTable data={data} columns={columns} />
-            <Table.Pagination
-              aria-label="Pagination for Cases"
-              pageIndex={pageIndex}
-              onChange={({ pageIndex }) => {
-                console.log(pageIndex);
-              }}
-              pageSize={tableData.page_size}
-              totalCount={tableData.total}
-            />
-          </>
-        )}
+        <DataTable data={cases} columns={columns} />
+        <Table.Pagination
+          id="cases-pagination"
+          aria-label="Pagination for Cases"
+          defaultPageIndex={0}
+          onChange={({ pageIndex }) => {
+            setPageIndex(pageIndex);
+          }}
+          pageSize={tableData.page_size}
+          totalCount={tableData.total}
+        />
       </Table.Container>
       <Box
         sx={{

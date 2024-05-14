@@ -33,14 +33,15 @@ async def edit_aggregate(d: AggregateInput):
   return { "msg": "editAggregate" }
 
 class SplitInput(BaseModel):
-   id: Union[str,UUID]
+   aggregate_id: Union[str,UUID] = None
+   workspace_id: UUID
    split_type: str = "groupBy"
    by: str
 
 @router.post("/splitAggregate")
 async def split_aggregate(d: SplitInput):
   tree: Tree = cache.tree
-  node = tree.get_node(d.id)
+  node = tree.get_node(d.aggregate_id)
 
   if d.split_type == "groupBy":
     splitter = split.GroupBySplit([d.by])
@@ -49,6 +50,7 @@ async def split_aggregate(d: SplitInput):
 
   tree.split_node(node, splitter=splitter)
   tree.save_to_file(cache.current_workspace.get_file("tree.json"))
+  return { "msg": "splitAggregate", "id": node._identifier }
 
 @router.get("/{aggregate_id}")
 async def get_aggregates(aggregate_id: Union[str,UUID] = None, up:int = None):
@@ -58,8 +60,5 @@ async def get_aggregates(aggregate_id: Union[str,UUID] = None, up:int = None):
     if up:
       aggregate_id = tree.get_nid_x_levels(aggregate_id,levels=up)
       tree_dict = tree.to_dict(aggregate_id,with_data=True)
-
-     
-
     
     return { "aggregates": tree.to_dict(aggregate_id,with_data=True)}

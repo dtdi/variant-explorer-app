@@ -74,6 +74,7 @@ class FileBasedConfigurationRepository(ConfigurationRepository):
                 name="Variant Explorer" , 
                 settings=settings, 
                 workspaces=workspaces)
+        
         with open(os.path.join(directory, CONFIG_FILENAME), 'r', encoding='utf-8') as f:
             configuation = Configuration.model_validate_json(f.read())
             return configuation
@@ -95,10 +96,13 @@ class ConfigurationRepositoryCacheProxy(ConfigurationRepository):
         self.cached_config = None
 
     def save_configuration(self, config: Configuration):
-        self.config_repo.save_configuration(config)
         self.cached_config = config
 
+        self.config_repo.save_configuration(config)
+
     def get_configuration(self) -> Configuration:
+        self.cached_config = self.config_repo.get_configuration()
+        return self.cached_config
         if self.cached_config is None:
             self.cached_config = self.config_repo.get_configuration()
 

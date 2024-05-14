@@ -17,9 +17,9 @@ import WorkspaceRoot, {
   loader as workspaceLoader,
 } from "./routes/WorkspaceRoot";
 
-import WorkspaceSettingsPage, {
-  loader as workspaceSettingsLoader,
-} from "./pages/Workspace/SettingsPage";
+import ColumnSettingsPage, {
+  loader as columnSettingsLoader,
+} from "./pages/Workspace/ColumnSettingsPage";
 
 import AggregateRoot, {
   loader as aggregateLoader,
@@ -72,8 +72,8 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/workspace/settings/:workspaceId/",
-        loader: workspaceSettingsLoader,
-        element: <WorkspaceSettingsPage />,
+        loader: columnSettingsLoader,
+        element: <ColumnSettingsPage />,
       },
     ],
   },

@@ -94,11 +94,8 @@ async def get_workspaces(repo: ConfigurationRepository = Depends(get_config_repo
     conf = repo.get_configuration()
     return conf.workspaces
 
-@router.get("/getWorkspace/{workspace_id}/{aggregate_id}")
-async def get_workspace(workspace_id: UUID, 
-                         aggregate_id: Union[UUID,str], 
-                         background_tasks: BackgroundTasks,
-                         repo: ConfigurationRepository = Depends(get_config_repo)):
+@router.get("/getWorkspaces/{workspace_id}")
+async def get_workspaces(workspace_id: UUID, repo: ConfigurationRepository = Depends(get_config_repo)):
     conf = repo.get_configuration()
     workspace: Workspace = conf.get_workspace(workspace_id=workspace_id)
 
@@ -113,7 +110,30 @@ async def get_workspace(workspace_id: UUID,
 
     cache.joblist.add_job( load_job )
     await load_workspace(load_job)
+
+    return { "workspace": workspace }
+
+@router.get("/getWorkspace/{workspace_id}/{aggregate_id}")
+async def get_workspace(workspace_id: UUID, 
+                         aggregate_id: Union[UUID,str], 
+                         background_tasks: BackgroundTasks,
+                         repo: ConfigurationRepository = Depends(get_config_repo)):
+    conf = repo.get_configuration()
+    workspace: Workspace = conf.get_workspace(workspace_id=workspace_id)
+
+    conf.current_workspace_id = workspace.id
+    repo.save_configuration(conf)
+
+    load_job = Job(
+      workspace_id=workspace_id, 
+      job_name="load_workspace",
+      job_data={ "workspace": workspace }
+    )
+
+    cache.joblist.add_job( load_job )
+    await load_workspace(load_job)
     print(aggregate_id, workspace_id)
+    
     tree = cache.tree
     node = tree.get_node(str(aggregate_id))
     breadcrumbs, level = tree.get_breadcrumbs(node.identifier)
