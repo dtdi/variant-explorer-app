@@ -13,6 +13,8 @@ import {
   BranchName,
   Link,
   Breadcrumbs,
+  SplitPageLayout,
+  Heading,
 } from "@primer/react";
 import { Hidden, PageHeader } from "@primer/react/experimental";
 import {
@@ -22,6 +24,7 @@ import {
   CommentDiscussionIcon,
   CommitIcon,
   FileDiffIcon,
+  FoldUpIcon,
   GearIcon,
   GraphIcon,
   ReplyIcon,
@@ -35,7 +38,7 @@ import {
   NavLink,
   redirect,
 } from "react-router-dom";
-import Blank from "../components/blank";
+import TreeNavigation from "../components/Navigation/TreeNavigation";
 
 import { useLoaderData, useNavigate } from "react-router-dom";
 
@@ -70,9 +73,9 @@ export default function WorkspaceRoot() {
   return (
     <ThemeProvider>
       <BaseStyles>
-        <WorkspaceContext.Provider value={{ workspace, aggregate, stats }}>
-          <PageLayout sx={{ height: "100vh" }} containerWidth="xlarge">
-            <PageLayout.Header>
+        <WorkspaceContext.Provider value={{ workspace }}>
+          <SplitPageLayout containerWitdth="fullWidth">
+            <SplitPageLayout.Header padding={"condensed"}>
               <PageHeader>
                 <PageHeader.TitleArea>
                   <PageHeader.LeadingAction>
@@ -101,7 +104,13 @@ export default function WorkspaceRoot() {
                     <Button variant="primary" trailingVisual={TriangleDownIcon}>
                       Add Item
                     </Button>
-                    <IconButton aria-label="Settings" icon={GearIcon} />
+                    <IconButton
+                      aria-label="workspace Settings"
+                      icon={GearIcon}
+                      onClick={() => {
+                        navigate(`/settings/${workspace.id}`);
+                      }}
+                    />
                   </PageHeader.Actions>
                 </PageHeader.TitleArea>
                 <PageHeader.Description>
@@ -111,37 +120,71 @@ export default function WorkspaceRoot() {
                     <BranchName>{stats.number_events} events</BranchName>
                   </Text>
                 </PageHeader.Description>
-                <PageHeader.Navigation>
-                  <UnderlineNav aria-label="Process Overview">
-                    <UnderlineNav.Item
-                      as={NavLink}
-                      to={`/workspace/${workspace.id}/${aggregate._identifier}`}
-                      icon={WorkflowIcon}
-                    >
-                      Process Map
-                    </UnderlineNav.Item>
-                    <UnderlineNav.Item
-                      as={NavLink}
-                      to={`/workspace/${workspace.id}/${aggregate._identifier}/cases`}
-                      counter={stats.number_cases}
-                      icon={BriefcaseIcon}
-                    >
-                      Cases
-                    </UnderlineNav.Item>
-                    <UnderlineNav.Item
-                      as={NavLink}
-                      to={`/workspace/${workspace.id}/${aggregate._identifier}/aggregates`}
-                      counter={stats.number_aggregates}
-                      icon={ChecklistIcon}
-                    >
-                      Aggregates
-                    </UnderlineNav.Item>
-                  </UnderlineNav>
-                </PageHeader.Navigation>
+                <PageHeader.Navigation></PageHeader.Navigation>
               </PageHeader>
-            </PageLayout.Header>
-            <Outlet />
-          </PageLayout>
+            </SplitPageLayout.Header>
+            <SplitPageLayout.Pane
+              divider={"line"}
+              resizable={true}
+              sticky={true}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  marginBottom: "16px",
+                  alignItems: "center",
+                }}
+              >
+                <IconButton
+                  variant="invisible"
+                  icon={FoldUpIcon}
+                  aria-label="Back to Root"
+                  onClick={() => navigate("")}
+                >
+                  Back to Root Aggregate
+                </IconButton>
+                <Heading as="h2" sx={{ fontSize: 16, marginLeft: "8px" }}>
+                  Aggregates
+                </Heading>
+              </Box>
+              <TreeNavigation up={3} />
+            </SplitPageLayout.Pane>
+            <SplitPageLayout.Content padding="condensed" width="full">
+              <UnderlineNav aria-label="Process Overview">
+                <UnderlineNav.Item
+                  as={NavLink}
+                  to={`/workspace/${workspace.id}/${aggregate._identifier}/`}
+                  icon={CommentDiscussionIcon}
+                >
+                  Overview
+                </UnderlineNav.Item>
+                <UnderlineNav.Item
+                  as={NavLink}
+                  to={`/workspace/${workspace.id}/${aggregate._identifier}/diagram`}
+                  icon={WorkflowIcon}
+                >
+                  Process Map
+                </UnderlineNav.Item>
+                <UnderlineNav.Item
+                  as={NavLink}
+                  to={`/workspace/${workspace.id}/${aggregate._identifier}/cases`}
+                  counter={stats.number_cases}
+                  icon={BriefcaseIcon}
+                >
+                  Cases
+                </UnderlineNav.Item>
+                <UnderlineNav.Item
+                  as={NavLink}
+                  to={`/workspace/${workspace.id}/${aggregate._identifier}/aggregates`}
+                  counter={stats.number_aggregates}
+                  icon={ChecklistIcon}
+                >
+                  Aggregates
+                </UnderlineNav.Item>
+              </UnderlineNav>
+              <Outlet />
+            </SplitPageLayout.Content>
+          </SplitPageLayout>
         </WorkspaceContext.Provider>
       </BaseStyles>
     </ThemeProvider>

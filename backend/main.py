@@ -64,7 +64,6 @@ app = get_application()
 @app.get("/environment")
 async def get_environment(repo: ConfigurationRepository = Depends(get_config_repo)):
     conf = repo.get_configuration()
-    conf.count_workspaces = len(conf.workspaces)
     return conf
 
 

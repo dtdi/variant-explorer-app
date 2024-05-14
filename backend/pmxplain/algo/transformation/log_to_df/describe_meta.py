@@ -5,14 +5,14 @@ import stringcase
 import traceback
 
 def get_data_category(series):
-    if pd.api.types.is_numeric_dtype(series.dtype):
+    if pd.api.types.is_bool_dtype(series.dtype):
+        return 'bool'
+    elif pd.api.types.is_numeric_dtype(series.dtype):
         return 'numeric'
     elif isinstance(series.dtype, pd.CategoricalDtype):
         return 'categorical'
     elif pd.api.types.is_datetime64_any_dtype(series.dtype):
         return 'datetime'
-    elif pd.api.types.is_bool_dtype(series.dtype):
-        return 'boolean'
     elif isinstance(series.dtype, pd.PeriodDtype):
         return 'period'
     elif pd.api.types.is_timedelta64_dtype(series.dtype):
@@ -96,18 +96,20 @@ def recommend_treat_as(df_description):
     return df_description
 
 def _describe_dataframe(df):
+    df = df.reset_index()
     description = pd.DataFrame({
-        'name': [convert_to_nice_string(col) for col in df.columns],
-        'column': df.columns,
-        'dtype': df.dtypes.values,
-        'category': [get_data_category(df[col]) for col in df.columns],
-        'has_nan_values': [(df[col]).isnull().any() for col in df.columns],
-        'distinct_values': [df[col].nunique() for col in df.columns],
-        'fraction_of_distinct_values': [df[col].nunique() / df[col].count() for col in df.columns],
-        'missing_values': [df[col].isnull().sum() for col in df.columns],
-        'recommended_conversion': 'no_conversion_needed',
-        'bin_sizes': 0,
-        'treat_as': 'feature',
+      'name': [convert_to_nice_string(col) for col in df.columns],
+      'column': df.columns,
+      'name_tech': [str(i+1) for i in range(len(df.columns))],
+      'dtype': df.dtypes.values,
+      'category': [get_data_category(df[col]) for col in df.columns],
+      'has_nan_values': [(df[col]).isnull().any() for col in df.columns],
+      'distinct_values': [df[col].nunique() for col in df.columns],
+      'fraction_of_distinct_values': [df[col].nunique() / df[col].count() for col in df.columns],
+      'missing_values': [df[col].isnull().sum() for col in df.columns],
+      'recommended_conversion': 'no_conversion_needed',
+      'bin_sizes': 0,
+      'treat_as': 'feature',
     })
     description.set_index('column', inplace=True)
     description = description.join((df.describe()).T)

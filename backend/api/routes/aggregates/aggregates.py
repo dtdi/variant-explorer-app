@@ -51,9 +51,15 @@ async def split_aggregate(d: SplitInput):
   tree.save_to_file(cache.current_workspace.get_file("tree.json"))
 
 @router.get("/{aggregate_id}")
-async def get_aggregates(aggregate_id: Union[str,UUID] = None):
+async def get_aggregates(aggregate_id: Union[str,UUID] = None, up:int = None):
     tree = cache.tree
     if not tree:
         return { "msg": "No tree loaded" }
+    if up:
+      aggregate_id = tree.get_nid_x_levels(aggregate_id,levels=up)
+      tree_dict = tree.to_dict(aggregate_id,with_data=True)
+
+     
+
     
     return { "aggregates": tree.to_dict(aggregate_id,with_data=True)}

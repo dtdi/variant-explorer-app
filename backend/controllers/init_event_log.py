@@ -9,6 +9,11 @@ import pandas as pd
 
 import concurrent.futures
 
+from util.config.repo import (
+    ConfigurationRepository,
+    ConfigurationRepositoryFactory,
+)
+
 from models import Workspace, Job, Stats, Aggregate, Tree
 
 import cache.cache as cache
@@ -22,6 +27,14 @@ def _import_event_log(log_path: str, workspace: Workspace):
     event_log.to_pickle(workspace.get_file("log.pkl"))
     cases, activities = generate_features(event_log)
     meta = describe_meta(cases)
+
+    workspace.init_columns(meta)
+
+    repo = ConfigurationRepositoryFactory.get_config_repository()
+    conf = repo.get_configuration()
+    conf.update_workspace(workspace)
+    repo.save_configuration(conf)
+
     tree = Tree()
     aggregate = Aggregate(
       id="root",
@@ -29,7 +42,7 @@ def _import_event_log(log_path: str, workspace: Workspace):
       workspace_id=workspace.id, 
       cases=cases, 
       meta=meta)
-    aggregate.initialize()
+    aggregate.initialize(workspace=workspace)
     aggregate.save()
     tree.create_node("root", "root", data=aggregate)
     tree.save_to_file(workspace.get_file("tree.json"))

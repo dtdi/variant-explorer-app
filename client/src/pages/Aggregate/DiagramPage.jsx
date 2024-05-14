@@ -9,7 +9,6 @@ import {
   forceX,
   forceY,
 } from "d3-force";
-import { stratify, tree } from "d3-hierarchy";
 
 import ReactFlow, {
   Background,
@@ -48,7 +47,7 @@ export async function loader({ params }) {
 
 import { quadtree } from "d3-quadtree";
 import { useContext, useMemo } from "react";
-import { WorkspaceContext } from "../../routes/WorkspaceRoot";
+import { AggregateContext } from "../../routes/AggregateRoot";
 import axios from "axios";
 import { Form } from "formik";
 
@@ -202,28 +201,13 @@ const LayoutFlow = ({ n, e }) => {
 
 export default function ProcessMapPage() {
   const { nodes, edges } = useLoaderData();
-  console.log(nodes, edges);
-  const { workspace, aggregate } = useContext(WorkspaceContext);
+  const { workspace, aggregate } = useContext(AggregateContext);
 
   return (
-    <>
-      <PageLayout.Pane>
-        <Box>{workspace.name}</Box>
-      </PageLayout.Pane>
-      <PageLayout.Content>
-        <Box
-          sx={{
-            border: "1px solid",
-            borderRadius: 2,
-            borderColor: "border.default",
-            height: 400,
-          }}
-        >
-          <ReactFlowProvider>
-            <LayoutFlow n={nodes} e={edges} />
-          </ReactFlowProvider>
-        </Box>
-      </PageLayout.Content>
-    </>
+    <Box sx={{ height: 400 }}>
+      <ReactFlowProvider>
+        <LayoutFlow n={nodes} e={edges} />
+      </ReactFlowProvider>
+    </Box>
   );
 }

@@ -8,24 +8,34 @@ import {
 } from "react-router-dom";
 import AppRoot, { loader as appStateLoader } from "./routes/AppRoot";
 import AppOverview, { loader as workspacesLoader } from "./pages/App/Overview";
+
 import AppSettings, { loader as settingsLoader } from "./pages/App/Settings";
 
 import ErrorPage from "./pages/ErrorPage";
 
 import WorkspaceRoot, {
   loader as workspaceLoader,
-  action as workspaceRedirectAction,
 } from "./routes/WorkspaceRoot";
 
-import ProcessMapPage, {
-  loader as processMapLoader,
-} from "./pages/Process/ProcessMapPage";
-import CaseExplorer, {
-  loader as casesLoader,
-} from "./pages/Process/CaseExplorer";
-import ProcessAggregates, {
+import WorkspaceSettingsPage, {
+  loader as workspaceSettingsLoader,
+} from "./pages/Workspace/SettingsPage";
+
+import AggregateRoot, {
+  loader as aggregateLoader,
+  action as aggregateRedirectAction,
+} from "./routes/AggregateRoot";
+
+import DiagramPage, {
+  loader as diagramLoader,
+} from "./pages/Aggregate/DiagramPage";
+import CasesPage from "./pages/Aggregate/CasesPage";
+import AggregatesPage, {
   loader as aggregatesLoader,
-} from "./pages/Process/ProcessAggregates";
+} from "./pages/Aggregate/AggregatesPage";
+import OverviewPage, {
+  loader as overviewLoader,
+} from "./pages/Aggregate/OverviewPage";
 
 const globalState = {
   apiUrl: "http://localhost:41211",
@@ -46,6 +56,7 @@ const router = createBrowserRouter([
         loader: workspacesLoader,
         element: <AppOverview />,
       },
+
       {
         path: "/settings",
         loader: settingsLoader,
@@ -55,24 +66,41 @@ const router = createBrowserRouter([
   },
   {
     element: <WorkspaceRoot />,
-    path: "/workspace/:workspaceId/:aggregateId?",
     loader: workspaceLoader,
+    path: "/workspace/settings/:workspaceId/",
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "/workspace/:workspaceId/:aggregateId",
-        loader: processMapLoader,
-        element: <ProcessMapPage />,
+        path: "/workspace/settings/:workspaceId/",
+        loader: workspaceSettingsLoader,
+        element: <WorkspaceSettingsPage />,
+      },
+    ],
+  },
+  {
+    element: <AggregateRoot />,
+    path: "/workspace/:workspaceId/:aggregateId?",
+    loader: aggregateLoader,
+    errorElement: <ErrorPage />,
+    children: [
+      {
+        path: "/workspace/:workspaceId/:aggregateId/diagram",
+        loader: diagramLoader,
+        element: <DiagramPage />,
       },
       {
         path: "/workspace/:workspaceId/:aggregateId/cases",
-        loader: casesLoader,
-        element: <CaseExplorer />,
+        element: <CasesPage />,
+      },
+      {
+        path: "/workspace/:workspaceId/:aggregateId",
+        loader: overviewLoader,
+        element: <OverviewPage />,
       },
       {
         path: "/workspace/:workspaceId/:aggregateId/aggregates",
         loader: aggregatesLoader,
-        element: <ProcessAggregates />,
+        element: <AggregatesPage />,
       },
     ],
   },

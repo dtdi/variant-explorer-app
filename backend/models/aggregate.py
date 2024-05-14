@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Union
 import pandas as pd
 from pmxplain import describe_meta
-
+from models.column import AggregateColumn
+from models.workspace import Workspace
 import os
 
 class Stats(BaseModel):
@@ -15,7 +16,7 @@ class Stats(BaseModel):
 
 class Aggregate(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
+    columns: list[AggregateColumn] = []
     id: Union[UUID,str] = uuid4()
     workspace_id: UUID
     name: str = ""
@@ -33,9 +34,30 @@ class Aggregate(BaseModel):
         if self.meta is None:
             self.meta = describe_meta(self.cases)
 
-    def initialize(self):
+    def initialize(self,workspace: Workspace):
         self.ensure_meta()
         self.stats.number_cases = len(self.cases)
+        self.columns = []
+        for series in self.meta.itertuples(index=True):
+            col = workspace.get_column_by_name(series.Index)
+            column = AggregateColumn(
+                id=uuid4(),
+                name=col.name,
+                name_tech=col.name_tech,
+                display_name=col.display_name,
+                type=col.type,
+                description="",
+                distinct_values=series.distinct_values,
+                fraction_of_distinct_values=series.fraction_of_distinct_values,
+                missing_values=series.missing_values,
+                has_nan_values=series.has_nan_values,
+                recommended_conversion=series.recommended_conversion,
+                bin_sizes=series.bin_sizes,
+                treat_as=series.treat_as
+
+            )
+            self.columns.append( column )
+        
 
     def cold_start(self):
         self.cases = pd.read_pickle(self.get_file('cases.pkl'))

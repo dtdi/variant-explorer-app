@@ -10,6 +10,12 @@ class Tree(_Tree):
     nodes = self.all_nodes()
     return { str(node._identifier): (None if node.predecessor(self._identifier) is None else str(node.predecessor(self._identifier))) for node in nodes }
   
+  def get_nid_x_levels(self, nid, levels=1):
+     crumbs = [ n for n in self.rsearch(nid)]
+     if levels > len(crumbs):
+        return crumbs[-1]
+     return crumbs[levels-1]
+
   def get_breadcrumbs(self, nid):
      crumbs = [ { "id": n, "name": self.get_node(n).data.name} for n in self.rsearch(nid)]
      crumbs.reverse()

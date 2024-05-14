@@ -36,6 +36,25 @@ class WorkspaceInput(BaseModel):
 class WorkspaceMin(BaseModel):
     id: UUID
 
+
+@router.get("/getWorkspaceColumns/{workspace_id}")
+async def get_workspace_columns(workspace_id: UUID, repo: ConfigurationRepository = Depends(get_config_repo)):
+    conf = repo.get_configuration()
+    workspace: Workspace = conf.get_workspace(workspace_id=workspace_id)
+
+    conf.current_workspace_id = workspace.id
+    repo.save_configuration(conf)
+    
+    load_job = Job(
+      workspace_id=workspace_id, 
+      job_name="load_workspace",
+      job_data={ "workspace": workspace }
+    )
+
+    cache.joblist.add_job( load_job )
+    await load_workspace(load_job)
+    
+
 @router.post("/editWorkspace")
 @router.post("/createWorkspace")
 async def create_workspace(d: WorkspaceInput, repo: ConfigurationRepository = Depends(get_config_repo)):

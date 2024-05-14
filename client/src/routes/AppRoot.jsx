@@ -42,70 +42,62 @@ export default function AppRoot() {
   return (
     <ThemeProvider>
       <BaseStyles>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateRows: "auto 1fr auto",
-            height: "100vh",
-          }}
-        >
-          <PageLayout>
-            <PageLayout.Header>
-              <PageHeader>
-                <PageHeader.TitleArea>
-                  <PageHeader.LeadingAction>
-                    <IconButton
-                      ref={returnFocusRef}
-                      icon={ThreeBarsIcon}
-                      aria-label="Menu"
-                      variant="invisible"
-                      onClick={() => setSidebarOpen(true)}
-                    />
-                  </PageHeader.LeadingAction>
-                  <PageHeader.Title>{appState.name}</PageHeader.Title>
-                </PageHeader.TitleArea>
+        <PageLayout padding="none" containerWidth="full">
+          <PageLayout.Header padding={"condensed"}>
+            <PageHeader>
+              <PageHeader.TitleArea>
+                <PageHeader.LeadingAction>
+                  <IconButton
+                    ref={returnFocusRef}
+                    icon={ThreeBarsIcon}
+                    aria-label="Menu"
+                    variant="invisible"
+                    onClick={() => setSidebarOpen(true)}
+                  />
+                </PageHeader.LeadingAction>
+                <PageHeader.Title>{appState.name}</PageHeader.Title>
+              </PageHeader.TitleArea>
 
-                <PageHeader.Navigation>
-                  <UnderlineNav aria-label="Process Work">
-                    <UnderlineNav.Item
-                      icon={FileDirectoryIcon}
-                      counter={appState.workspaces.length}
-                      as={NavLink}
-                      to="/"
-                    >
-                      Workspaces
-                    </UnderlineNav.Item>
+              <PageHeader.Navigation>
+                <UnderlineNav aria-label="Process Work">
+                  <UnderlineNav.Item
+                    icon={FileDirectoryIcon}
+                    counter={appState.workspaces.length}
+                    as={NavLink}
+                    to="/"
+                  >
+                    Workspaces
+                  </UnderlineNav.Item>
 
-                    <UnderlineNav.Item
-                      as={NavLink}
-                      to="/settings"
-                      icon={GearIcon}
-                    >
-                      Settings
-                    </UnderlineNav.Item>
-                    <UnderlineNav.Item counter={4} icon={FileDiffIcon}>
-                      Files Changes
-                    </UnderlineNav.Item>
-                  </UnderlineNav>
-                </PageHeader.Navigation>
-              </PageHeader>
-            </PageLayout.Header>
-            <PageLayout.Content>
-              {sidebarOpen && (
-                <Dialog
-                  title={appState.name}
-                  subtitle="Menu"
-                  width="small"
-                  returnFocusRef={returnFocusRef}
-                  position={"left"}
-                  onClose={() => setSidebarOpen(false)}
-                ></Dialog>
-              )}
-              <Outlet />
-            </PageLayout.Content>
-            <PageLayout.Footer></PageLayout.Footer>
-          </PageLayout>
-        </Box>
+                  <UnderlineNav.Item
+                    as={NavLink}
+                    to="/settings"
+                    icon={GearIcon}
+                  >
+                    Settings
+                  </UnderlineNav.Item>
+                  <UnderlineNav.Item counter={4} icon={FileDiffIcon}>
+                    Files Changes
+                  </UnderlineNav.Item>
+                </UnderlineNav>
+              </PageHeader.Navigation>
+            </PageHeader>
+          </PageLayout.Header>
+          <PageLayout.Content padding="condensed">
+            {sidebarOpen && (
+              <Dialog
+                title={appState.name}
+                subtitle="Menu"
+                width="small"
+                returnFocusRef={returnFocusRef}
+                position={"left"}
+                onClose={() => setSidebarOpen(false)}
+              ></Dialog>
+            )}
+            <Outlet />
+          </PageLayout.Content>
+          <PageLayout.Footer></PageLayout.Footer>
+        </PageLayout>
       </BaseStyles>
     </ThemeProvider>
   );

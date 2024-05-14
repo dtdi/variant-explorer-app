@@ -5,7 +5,8 @@ import axios from "axios";
 
 export async function loader() {
   const apiUrl = "http://localhost:41211";
-  const settings = await fetch(`${apiUrl}/settings`).then((res) => res.json());
+  const settings = await axios.get(`${apiUrl}/settings`);
+  console.log(settings);
   return { settings };
 }
 

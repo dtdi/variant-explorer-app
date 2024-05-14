@@ -13,6 +13,7 @@ import {
   RelativeTime,
   TextInput,
   Textarea,
+  Truncate,
 } from "@primer/react";
 import { Blankslate, DataTable, Table } from "@primer/react/drafts";
 import { Dialog } from "@primer/react/experimental";
@@ -191,14 +192,18 @@ export default function AppOverview() {
                   <RelativeTime date={new Date(row.created_at)} />
                 ),
               },
-              { header: "Description", field: "description" },
+              {
+                header: "Description",
+                field: "description",
+                renderCell: (row) => (
+                  <Truncate maxWidth={230}>{row.description}</Truncate>
+                ),
+              },
               {
                 header: "Log",
                 field: "Log",
                 renderCell: (row) => {
-                  return (
-                    row.log && <Label key={row.log.id}>{row.log.name}</Label>
-                  );
+                  return row.log_name && <Label>{row.log_name}</Label>;
                 },
               },
 
