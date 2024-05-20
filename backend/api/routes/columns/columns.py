@@ -3,12 +3,13 @@ from fastapi import APIRouter, Depends
 from datetime import datetime
 from uuid import UUID, uuid4
 from typing import Union, Optional
-import pm4py
-import json
+
 import pandas as pd
 from pm4py.util import constants
 import cache.cache as cache
 from pydantic import BaseModel
+
+from models import WorkspaceData, Column
 
 from util.config.repo import (
     ConfigurationRepository,
@@ -24,19 +25,19 @@ def get_config_repo():
 
 @router.get("/getColumns/{workspace_id}")
 async def get_columns(workspace_id: UUID):
-    workspace = cache.current_workspace
+    workspace:WorkspaceData = cache.workspace
     columns = workspace.columns
     return columns
 
 @router.get("/getColumn/{workspace_id}/{column_id}")
 async def get_column(workspace_id: UUID, column_id: UUID):
-    workspace = cache.current_workspace
+    workspace:WorkspaceData = cache.workspace
     column = workspace.get_column(column_id)
     return column
 
 @router.get("/getColumnByName/{workspace_id}/{column_name}")
 async def get_column_by_name(workspace_id: UUID, column_name: str):
-    workspace = cache.current_workspace
+    workspace:WorkspaceData = cache.workspace
     column = workspace.get_column_by_name(column_name)
     return column
 
@@ -49,10 +50,8 @@ class ColumnInput(BaseModel):
     description: Optional[str] = None
 
 @router.post("/editColumn/{workspace_id}")
-async def edit_column(workspace_id: UUID, column: ColumnInput,repo: ConfigurationRepository = Depends(get_config_repo)):
-    conf = repo.get_configuration()
-
-    workspace = cache.current_workspace
+async def edit_column(workspace_id: UUID, column: ColumnInput):
+    workspace:WorkspaceData = cache.workspace
     col = workspace.get_column(column.id)
 
     col.display_name = column.display_name
@@ -63,8 +62,6 @@ async def edit_column(workspace_id: UUID, column: ColumnInput,repo: Configuratio
     col.infer_aggregate_column_type()
 
     workspace.update_column(col)
-
-    conf.update_workspace(workspace)
-    repo.save_configuration(conf)
+    workspace.save()
     return workspace.columns
 

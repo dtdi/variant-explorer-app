@@ -1,9 +1,9 @@
 from treelib import Node, Tree as _Tree
+import models.aggregate
 import pmxplain.algo.split.split as split
 import json
 from uuid import UUID, uuid4
-
-from models import Aggregate
+import models as models
 
 class Tree(_Tree):
   def to_map(self) -> dict:
@@ -26,12 +26,12 @@ class Tree(_Tree):
   def split_node(self, node, splitter: split.Split):
     if not isinstance(node, Node):
       node = self.get_node(node)
-    agg: Aggregate = node.data
+    agg = node.data
 
     grouped = splitter.split(agg.cases)
     
     for name, cases in grouped:
-      new_agg = Aggregate(
+      new_agg = models.aggregate.Aggregate(
          id=uuid4(),
         name=str(name),
         workspace_id=agg.workspace_id,
@@ -86,10 +86,17 @@ class Tree(_Tree):
   
   @classmethod
   def from_file(cls, file_name=str, workspace_id=UUID) -> 'Tree':
-    with open(file_name, "r") as f:
-      tree = Tree.from_map(json.load(f), 
-        data_func=lambda x: Aggregate.load(workspace_id, x) )
-      return tree
+    try:
+      with open(file_name, "r") as f:
+        tree = Tree.from_map(json.load(f), 
+          data_func=lambda x: models.aggregate.Aggregate.load(workspace_id, x) )
+        return tree
+    except FileNotFoundError:
+        print(f"tree does not exist : {file_name}")
+        return cls()
+    except Exception as e:
+        print(f"error loading tree: {e}")
+      
     
   def save_to_file(self, file_name: str):
     with open(file_name, "w") as f:

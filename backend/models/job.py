@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 class Job:
-  def __init__(self, workspace_id: UUID, job_name: str, job_data: Mapping[str, str]):
+  def __init__(self, workspace_id: UUID, job_name: str, job_data: Mapping[str, str]=None):
     self.job_id = uuid4()
     self.workspace_id = workspace_id
     self.job_name = job_name
@@ -22,6 +22,7 @@ class Job:
 
   def start_job(self) -> None: 
     self.status = 'Started'
+    print(f'Job {self.job_name} started with workspace {str(self.workspace_id)}')
     self.fulfillment = 0
 
   def complete_job(self) -> None:
@@ -65,7 +66,3 @@ class JobList:
   def delete_job(self, job_id: UUID) -> None:
     if job_id in self.jobs:
       del self.jobs[job_id]
-
-
-joblist = JobList()
-

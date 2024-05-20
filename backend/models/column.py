@@ -3,12 +3,11 @@ from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID, uuid4
 
-
-
 MAX_BINS_TO_HANDLE = 30
 
 class Column(BaseModel):
     id: UUID = uuid4()
+    order: int = 0
     name: str
     name_tech: int = 0
     display_name: str
@@ -58,36 +57,3 @@ class Column(BaseModel):
             self.aggregate_column_type = "IntervalColumn"
         else:
             self.aggregate_column_type = "AggregateColumn"
-
-class AggregateColumn(BaseModel):
-    id: UUID = uuid4()
-    ref: Column = None
-    name: Optional[str] = None
-    name_tech: int = 0
-    display_name: Optional[str] = None
-    description: Optional[str] = None
-    type: str = None
-    column_type: str = None
-    event_log_column: Optional[str] = None
-    analysis_category:  Optional[str] = None
-    split_type: Optional[str] = None
-    has_nan_values: bool = False
-    missing_values: int = 0
-    distinct_values: int = 0
-    fraction_of_distinct_values: float = 0.0
-    recommended_conversion: str = None
-    bin_sizes: int = 0
-    treat_as: str = None
-    head: Optional[list] = []
-    value_dict: Optional[dict] = None
-
-    def init(self, cases):
-      self.head = cases[self.name].sample(10).tolist()
-      if self.distinct_values <= MAX_BINS_TO_HANDLE:
-        self.value_dict = cases[self.name].value_counts().to_dict()
-    
-    def mutateValues(self, x): 
-      if self.type == 'datetime':
-        return str(x)
-      else:
-        return x

@@ -125,6 +125,8 @@ export default function ColumnSettingsPage() {
                     <Select.Option value="numeric">Numeric</Select.Option>
                     <Select.Option value="timedelta">Timedelta</Select.Option>
                     <Select.Option value="bool">Boolean</Select.Option>
+                    <Select.Option value="datetime">Datetime</Select.Option>
+
                     <Select.Option value="categorical">
                       Categorical
                     </Select.Option>

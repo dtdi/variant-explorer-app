@@ -26,9 +26,7 @@ import AggregateRoot, {
   action as aggregateRedirectAction,
 } from "./routes/AggregateRoot";
 
-import DiagramPage, {
-  loader as diagramLoader,
-} from "./pages/Aggregate/DiagramPage";
+import DiagramPage2 from "./pages/Aggregate/DiagramPageV2";
 import CasesPage from "./pages/Aggregate/CasesPage";
 import AggregatesPage, {
   loader as aggregatesLoader,
@@ -85,8 +83,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/workspace/:workspaceId/:aggregateId/diagram",
-        loader: diagramLoader,
-        element: <DiagramPage />,
+        element: <DiagramPage2 />,
       },
       {
         path: "/workspace/:workspaceId/:aggregateId/cases",

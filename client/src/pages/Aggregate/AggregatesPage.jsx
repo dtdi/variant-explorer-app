@@ -16,13 +16,8 @@ export async function loader({ params }) {
 
   const apiUrl = "http://localhost:41211";
 
-  const request = {
-    workspace: workspaceId,
-    aggregate: aggregateId,
-  };
-
   const { aggregates } = await axios
-    .get(`${apiUrl}/aggregates/${aggregateId}?up=3`)
+    .get(`${apiUrl}/aggregates/${aggregateId}/flat`)
     .then((res) => res.data);
 
   return { aggregates };
@@ -34,17 +29,9 @@ export default function ProcessAggregates() {
   return (
     <>
       <PageLayout.Content>
-        <nav aria-label="Aggregates">
-          <TreeView aria-label="Aggregates">
-            {Object.entries(aggregates).map(([key, value]) => (
-              <TreeNavigation
-                level={0}
-                data={value.data}
-                children={value.children}
-              />
-            ))}
-          </TreeView>
-        </nav>
+        {aggregates.map((aggregate) => (
+          <Box key={aggregate.id}>{aggregate.name}</Box>
+        ))}
       </PageLayout.Content>
     </>
   );

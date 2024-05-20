@@ -5,15 +5,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Union
 import pandas as pd
+import models.workspace
 from pmxplain import describe_meta
-from models.column import AggregateColumn
-from models.workspace import Workspace
+from models.aggregate_column import AggregateColumn
+import models as models
+from models.stats import Stats
 import os
 import cache.cache as cache
 
-class Stats(BaseModel):
-    number_cases: int = 0
-    number_events: int = 0
+
 
 class Aggregate(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -30,16 +30,24 @@ class Aggregate(BaseModel):
     meta: pd.DataFrame = Field(default=None,exclude=True)
     #activities: pd.DataFrame = Field(default=None,exclude=True)
     stats: Stats = Stats()
+
+
+    @property
+    def llm_string(self):
+        return self.name
         
     def ensure_meta(self):
         if self.meta is None:
             self.meta = describe_meta(self.cases)
 
-    def initialize(self,workspace: Workspace=None):
+    def initialize(self,workspace: models.workspace.Workspace=None):
         if(workspace is None):
-            workspace = cache.current_workspace
+            workspace = cache.workspace
+
         self.ensure_meta()
         self.stats.number_cases = len(self.cases)
+        self.stats.number_variants = self.cases['case:##variant_str'].nunique()
+
         self.columns = []
         cases = self.cases.reset_index()
         for series in self.meta.itertuples(index=True):
@@ -48,11 +56,6 @@ class Aggregate(BaseModel):
             column = AggregateColumn(
                 id=uuid4(),
                 name=col.name,
-                name_tech=col.name_tech,
-                display_name=col.display_name,
-                type=col.type,
-                column_type=col.aggregate_column_type,
-                description="",
                 distinct_values=series.distinct_values,
                 fraction_of_distinct_values=series.fraction_of_distinct_values,
                 missing_values=series.missing_values,
@@ -67,7 +70,7 @@ class Aggregate(BaseModel):
             self.columns.append( column )
         
 
-    def cold_start(self):
+    def boot(self):
         self.cases = pd.read_pickle(self.get_file('cases.pkl'))
         self.meta = pd.read_pickle(self.get_file('meta.pkl'))
         #self.activities = pd.read_pickle(self.get_file('activities.pkl'))
@@ -109,7 +112,7 @@ class Aggregate(BaseModel):
       try:
         with open(cls._get_file(workspace_id=workspace_id, id=str(id), file_name='aggregate.json'), 'r') as f:            
             agg = cls.from_json(f.read())
-            agg.cold_start()
+            agg.boot()
             return agg
 
       except FileNotFoundError:

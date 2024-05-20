@@ -1,24 +1,36 @@
 import os
-from pathlib import Path
 import logging
-import json
 import traceback
-import shutil
 import asyncio
 import pandas as pd
 
 import concurrent.futures
 
+
+from models import Workspace, Job, Aggregate, Tree, WorkspaceData
 from util.config.repo import (
     ConfigurationRepository,
     ConfigurationRepositoryFactory,
 )
-
-from models import Workspace, Job, Stats, Aggregate, Tree
-
 import cache.cache as cache
 
 from pmxplain import import_log, generate_features, describe_meta
+
+def _refresh_tree(workspaceData: WorkspaceData, cases, meta):
+    aggregate = Aggregate(
+      id="root",
+      name="Root", 
+      workspace_id=workspaceData.id, 
+      cases=cases, 
+      meta=meta)
+    
+    aggregate.initialize(workspace=workspaceData)
+    aggregate.save()
+
+    tree = Tree()
+    tree.create_node(aggregate.id, aggregate.id, data=aggregate)
+    workspaceData.tree = tree
+    workspaceData.save()
 
 def _import_event_log(log_path: str, workspace: Workspace):
   try:
@@ -28,25 +40,15 @@ def _import_event_log(log_path: str, workspace: Workspace):
     cases, activities = generate_features(event_log)
     meta = describe_meta(cases)
 
-    workspace.init_columns(meta)
+    workspaceData = workspace.data
+    workspaceData.init_columns(meta)
+    cache.workspace = workspaceData
 
-    repo = ConfigurationRepositoryFactory.get_config_repository()
-    conf = repo.get_configuration()
-    conf.update_workspace(workspace)
-    repo.save_configuration(conf)
     print("config saved")
+    _refresh_tree(workspaceData, cases, meta)
+    
+    workspaceData.save()
 
-    tree = Tree()
-    aggregate = Aggregate(
-      id="root",
-      name=workspace.name, 
-      workspace_id=workspace.id, 
-      cases=cases, 
-      meta=meta)
-    aggregate.initialize(workspace=workspace)
-    aggregate.save()
-    tree.create_node("root", "root", data=aggregate)
-    tree.save_to_file(workspace.get_file("tree.json"))
    
   except Exception as e:
     traceback.print_exc()
@@ -72,25 +74,37 @@ async def import_event_log(job: Job):
     return
 
 async def load_workspace(job: Job): 
-  workspace:Workspace = job.data.get("workspace")
   job.start_job()
 
-  if cache.current_workspace is not None and workspace.id == cache.current_workspace.id:
-    job.complete_job()
-    print("workspace already loaded")
-    return
+  workspace_id = job.workspace_id
 
-  if not os.path.exists(workspace.get_file("tree.json")):
+  if cache.workspace is not None and workspace_id == cache.workspace.id:
+    job.complete_job()
+    return cache.workspace
+
+  repo = ConfigurationRepositoryFactory.get_config_repository()
+  conf = repo.get_configuration()
+  workspace: Workspace = conf.get_workspace(workspace_id=workspace_id)
+
+  conf.current_workspace_id = workspace.id
+  repo.save_configuration(conf)
+
+
+  # load workspace, test if it must be initialized. 
+  if not os.path.exists(workspace.get_file("agg")):
     import_job = Job(
-      workspace_id=workspace.id, 
+      workspace_id=workspace_id, 
       job_name="import_event_log", 
       job_data={"workspace": workspace})
     cache.joblist.add_job(import_job)
     await import_event_log(import_job)
   
-  cache.current_workspace = workspace
-  cache.tree = Tree.from_file(workspace.get_file("tree.json"), workspace_id=workspace.id)
-  cache.current_aggregate = cache.tree.get_node("root").data
-  cache.event_log = pd.read_pickle(workspace.get_file("log.pkl"))
-   
+  workspaceData: WorkspaceData = WorkspaceData.load(job.workspace_id)
+  workspaceData.name = workspace.name
+  workspaceData.description = workspace.description
+
+  cache.workspace = workspaceData
+  cache.tree = workspaceData.load_tree()
+  cache.aggregate = cache.tree.get_node("root").data
+  cache.event_log = pd.read_pickle(workspaceData.get_file("log.pkl"))
   job.complete_job()

@@ -1,4 +1,16 @@
-import { Box, PageLayout } from "@primer/react";
+import {
+  Box,
+  BranchName,
+  Button,
+  Checkbox,
+  CheckboxGroup,
+  FormControl,
+  Heading,
+  PageLayout,
+  Text,
+  TextInput,
+  ToggleSwitch,
+} from "@primer/react";
 
 import { useLoaderData } from "react-router-dom";
 
@@ -25,31 +37,11 @@ import "reactflow/dist/style.css";
 
 export async function action({ params }) {}
 
-export async function loader({ params }) {
-  const { workspaceId, aggregateId } = params;
-
-  const apiUrl = "http://localhost:41211";
-
-  const diagramRequest = {
-    workspace: workspaceId,
-    aggregate: aggregateId,
-    activitiesSlider: 0.02,
-    pathsSlider: 0.02,
-    decoration: "freq",
-  };
-
-  const { nodes, edges } = await axios
-    .post(`${apiUrl}/log/diagram`, diagramRequest)
-    .then((res) => res.data);
-
-  return { nodes, edges };
-}
-
 import { quadtree } from "d3-quadtree";
-import { useContext, useMemo } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AggregateContext } from "../../routes/AggregateRoot";
 import axios from "axios";
-import { Form } from "formik";
+import { ApiContext } from "../../main";
 
 const collide = function () {
   let nodes = [];
@@ -200,14 +192,115 @@ const LayoutFlow = ({ n, e }) => {
 };
 
 export default function ProcessMapPage() {
-  const { nodes, edges } = useLoaderData();
+  const { apiUrl } = useContext(ApiContext);
   const { workspace, aggregate } = useContext(AggregateContext);
 
+  const [nodes, setNodes] = useState([]);
+  const [edges, setEdges] = useState([]);
+  const [activitiesSlider, setActivitiesSlider] = useState(0.04);
+  const [pathsSlider, setPathsSlider] = useState(0.04);
+  const [decoration, setDecoration] = useState("freq");
+  const [frequencyMeasure, setFrequencyMeasure] = useState("noe");
+  const [performanceMeasure, setPerformanceMeasure] = useState("noe");
+
+  const updateDiagram = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+    const diagramRequest = {
+      workspace: workspace.id,
+      aggregate: aggregate._identifier,
+      activitiesSlider: activitiesSlider,
+      pathsSlider: pathsSlider,
+      decoration: decoration,
+    };
+    axios
+      .post(`${apiUrl}/log/diagram`, diagramRequest)
+      .then((res) => res.data)
+      .then((data) => {
+        setNodes(data.nodes);
+        setEdges(data.edges);
+      });
+  }, [
+    apiUrl,
+    workspace,
+    aggregate,
+    activitiesSlider,
+    pathsSlider,
+    decoration,
+    frequencyMeasure,
+    performanceMeasure,
+  ]);
   return (
-    <Box sx={{ height: 400 }}>
-      <ReactFlowProvider>
-        <LayoutFlow n={nodes} e={edges} />
-      </ReactFlowProvider>
+    <Box sx={{ display: "grid", gridTemplateColumns: "3fr 1fr", gap: 3 }}>
+      <Box
+        sx={{
+          height: 600,
+          borderWidth: 1,
+          borderStyle: "solid",
+          borderColor: "border.default",
+          borderRadius: 2,
+        }}
+      >
+        {nodes.length > 0 && edges.length > 0 && (
+          <ReactFlowProvider>
+            <LayoutFlow n={nodes} e={edges} />
+          </ReactFlowProvider>
+        )}
+      </Box>
+      <Box
+        sx={{
+          borderWidth: 1,
+          borderStyle: "solid",
+          borderColor: "border.default",
+          borderRadius: 2,
+          p: 3,
+          bg: "canvas.default",
+        }}
+      >
+        <Box sx={{ mb: 3 }}>
+          <Heading as="h4">Process Map Settings</Heading>
+          <BranchName as="div">{workspace.name}</BranchName>
+          <Text as="p">{workspace.description}</Text>
+          <FormControl>
+            <FormControl.Label>% Activities</FormControl.Label>
+            <TextInput
+              monospace
+              value={activitiesSlider}
+              onChange={(e) => {
+                setActivitiesSlider(e.target.value);
+              }}
+            />
+          </FormControl>
+          <FormControl>
+            <FormControl.Label>% Paths</FormControl.Label>
+            <TextInput
+              monospace
+              value={pathsSlider}
+              onChange={(e) => {
+                setPathsSlider(e.target.value);
+              }}
+            />
+          </FormControl>
+
+          <Button onClick={updateDiagram}>Update Diagram</Button>
+
+          <CheckboxGroup>
+            <CheckboxGroup.Label>Decoration</CheckboxGroup.Label>
+            <FormControl>
+              <Checkbox value="Frequency" />
+              <FormControl.Label>Frequency</FormControl.Label>
+            </FormControl>
+            <FormControl>
+              <Checkbox value="Performance" />
+              <FormControl.Label>Performance</FormControl.Label>
+            </FormControl>
+            <FormControl>
+              <Checkbox value="CasePercentage" />
+              <FormControl.Label>Case Percentage</FormControl.Label>
+            </FormControl>
+          </CheckboxGroup>
+        </Box>
+      </Box>
     </Box>
   );
 }

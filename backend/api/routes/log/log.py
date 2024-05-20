@@ -28,7 +28,7 @@ class DiagramInput(BaseModel):
 @router.post("/diagram")
 async def get_diagram(d: DiagramInput): 
   
-  cases = cache.current_aggregate.cases
+  cases = cache.aggregate.cases
   df_l = cache.event_log
 
   df_l = df_l[df_l['case:concept:name'].isin(cases.index)]
@@ -39,17 +39,16 @@ async def get_diagram(d: DiagramInput):
      decoration=d.decoration,
      activity_key=d.activityKey, 
      aggregation_measure=d.performanceAgg,
-    activity_percentage=d.activitiesSlider,
+     activity_percentage=d.activitiesSlider,
      paths_percentage=d.pathsSlider,
      dependency_threshold=d.dependencyTreshold,
      business_hours=False
   )
 
   nodes = []
-  spacer = 0
-  for k,v in act_count.items(): 
-    node = { 'id': k, 'data': { 'label': k, 'value': v}, 'position': {'x': 0, 'y': spacer} }
-    spacer = spacer + 20
+
+  for k,v in reversed(act_count.items()): 
+    node = { 'id': k,'text': k , 'data': { 'label': k, 'value': v} }
     if k == '■':
       node['type']='output'
     if k== '▶':
@@ -61,10 +60,9 @@ async def get_diagram(d: DiagramInput):
       source, target = key
       edge = {
         'id': f"{source}-{target}",
-        'source': source,
-        'target': target,
-        'label': f"{value}",
-        "type": 'smoothstep'
+        'from': source,
+        'to': target,
+        'text': f"{value}",
       }
       edges.append(edge)
 

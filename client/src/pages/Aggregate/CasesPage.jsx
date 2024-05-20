@@ -21,7 +21,9 @@ export default function ProcessOverview() {
     return columns.map((column) => {
       if (column.display_as === "badge") {
         column.renderCell = (value) => {
-          return <Label>{value[column.field]}</Label>;
+          const valueText = value[column.field].toString();
+
+          return <Label>{valueText}</Label>;
         };
       }
       return column;
@@ -59,8 +61,14 @@ export default function ProcessOverview() {
   }
 
   return (
-    <Box sx={{ display: "flex" }}>
-      <Table.Container sx={{ flexGrow: 1 }}>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0,1fr) 300px",
+        gap: 3,
+      }}
+    >
+      <Table.Container>
         <Table.Title>Cases</Table.Title>
         <Table.Subtitle>afasfasf</Table.Subtitle>
         <DataTable data={cases} columns={columns} />

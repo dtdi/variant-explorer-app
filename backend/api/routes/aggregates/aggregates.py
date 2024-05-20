@@ -10,17 +10,10 @@ import cache.cache as cache
 
 from pydantic import BaseModel
 
-from util.config.repo import (
-    ConfigurationRepository,
-    ConfigurationRepositoryFactory,
-)
 
 from models import Workspace, Job, Aggregate
 
 router = APIRouter(tags=["aggregates"], prefix="/aggregates")
-
-def get_config_repo():
-    return ConfigurationRepositoryFactory.get_config_repository()
 
 class AggregateInput(BaseModel):
     id: Union[str,UUID] = None
@@ -48,8 +41,9 @@ async def split_aggregate(d: SplitInput):
   else:
     splitter = split.GroupBySplit([d.by])
 
-  tree.split_node(node, splitter=splitter)
-  tree.save_to_file(cache.current_workspace.get_file("tree.json"))
+  tree.split_node(node, splitter)
+  cache.workspace.save()
+
   return { "msg": "splitAggregate", "id": node._identifier }
 
 @router.get("/{aggregate_id}")
@@ -62,3 +56,10 @@ async def get_aggregates(aggregate_id: Union[str,UUID] = None, up:int = None):
       tree_dict = tree.to_dict(aggregate_id,with_data=True)
     
     return { "aggregates": tree.to_dict(aggregate_id,with_data=True)}
+
+@router.get("/{aggregate_id}/list")
+async def get_flat_aggregates(aggregate_id: Union[str,UUID] = None):
+    tree = cache.tree
+    node = tree.get_node(aggregate_id)
+    
+    return { "aggregates": node.successors }

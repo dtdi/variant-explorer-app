@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import { AggregateContext } from "../../routes/AggregateRoot";
-import { Octicon, TreeView } from "@primer/react";
+import { Label, Octicon, TreeView } from "@primer/react";
 import { DiffAddedIcon, WorkflowIcon } from "@primer/octicons-react";
 import axios from "axios";
 import { ApiContext } from "../../main";
@@ -23,7 +23,7 @@ function TreeNavigation({ data, children, level }) {
       </TreeView.LeadingVisual>
       {data.name}
       <TreeView.TrailingVisual>
-        <Octicon icon={DiffAddedIcon} color="success.fg" aria-label="Added" />
+        <Label>{data.stats.number_cases}</Label>
       </TreeView.TrailingVisual>
       {children && (
         <TreeView.SubTree>
@@ -50,12 +50,13 @@ export default function AggregateNavigation({ up }) {
   const [aggregates, setAggregates] = useState({});
 
   useEffect(() => {
+    if (!up) return;
     setIsLoading(true);
     axios
       .get(`${apiUrl}/aggregates/${aggregate._identifier}?up=${up}`)
       .then((res) => setAggregates(res.data.aggregates))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [aggregate, up]);
 
   if (isLoading) {
     return (

@@ -23,11 +23,13 @@ import {
   ChecklistIcon,
   CommentDiscussionIcon,
   CommitIcon,
+  DownloadIcon,
   FileDiffIcon,
   FoldUpIcon,
   GearIcon,
   GraphIcon,
   ReplyIcon,
+  RepoIcon,
   ThreeBarsIcon,
   TriangleDownIcon,
   WorkflowIcon,
@@ -75,9 +77,14 @@ export default function WorkspaceRoot() {
       <BaseStyles>
         <AggregateContext.Provider value={{ workspace, aggregate, stats }}>
           <SplitPageLayout containerWitdth="fullWidth">
-            <SplitPageLayout.Header padding={"condensed"}>
+            <SplitPageLayout.Header
+              sx={{ bg: "canvas.inset" }}
+              padding={"none"}
+            >
               <PageHeader>
-                <PageHeader.TitleArea>
+                <PageHeader.TitleArea
+                  sx={{ p: 3, pb: 0, alignItems: "center" }}
+                >
                   <PageHeader.LeadingAction>
                     <IconButton
                       icon={ReplyIcon}
@@ -87,8 +94,9 @@ export default function WorkspaceRoot() {
                     />
                   </PageHeader.LeadingAction>
                   <Breadcrumbs>
-                    {breadcrumbs.map((b) => (
+                    {breadcrumbs.map((b, idx) => (
                       <Breadcrumbs.Item
+                        selected={idx === breadcrumbs.length - 1}
                         onClick={() =>
                           navigate(`/workspace/${workspace.id}/${b.id}`)
                         }
@@ -99,13 +107,23 @@ export default function WorkspaceRoot() {
                     ))}
                   </Breadcrumbs>
                   <PageHeader.Actions>
-                    <IconButton aria-label="Workflows" icon={WorkflowIcon} />
+                    <IconButton
+                      aria-label="Bookmarks"
+                      icon={RepoIcon}
+                      onClick={() => {
+                        navigate(`workspace/collections/${workspace.id}`);
+                      }}
+                    />
+                    <IconButton
+                      aria-label="Download Aggregate Log"
+                      icon={DownloadIcon}
+                    />
                     <IconButton aria-label="Insights" icon={GraphIcon} />
                     <Button variant="primary" trailingVisual={TriangleDownIcon}>
                       Add Item
                     </Button>
                     <IconButton
-                      aria-label="workspace Settings"
+                      aria-label="Workspace Settings"
                       icon={GearIcon}
                       onClick={() => {
                         navigate(`/workspace/settings/${workspace.id}`);
@@ -113,18 +131,53 @@ export default function WorkspaceRoot() {
                     />
                   </PageHeader.Actions>
                 </PageHeader.TitleArea>
-                <PageHeader.Description>
+                <PageHeader.Description sx={{ pl: 3, pr: 3 }}>
                   <Text sx={{ fontSize: 1, color: "fg.muted" }}>
                     Part of the <BranchName>{workspace.name}</BranchName>{" "}
                     <BranchName>{stats.number_cases} cases</BranchName>{" "}
                     <BranchName>{stats.number_events} events</BranchName>
                   </Text>
                 </PageHeader.Description>
-                <PageHeader.Navigation></PageHeader.Navigation>
+                <PageHeader.Navigation>
+                  <UnderlineNav aria-label="Process Overview">
+                    <UnderlineNav.Item
+                      as={NavLink}
+                      to={`/workspace/${workspace.id}/${aggregate._identifier}/`}
+                      icon={CommentDiscussionIcon}
+                    >
+                      Overview
+                    </UnderlineNav.Item>
+                    <UnderlineNav.Item
+                      as={NavLink}
+                      to={`/workspace/${workspace.id}/${aggregate._identifier}/diagram`}
+                      counter={stats.number_variants}
+                      icon={WorkflowIcon}
+                    >
+                      Process Map
+                    </UnderlineNav.Item>
+                    <UnderlineNav.Item
+                      as={NavLink}
+                      to={`/workspace/${workspace.id}/${aggregate._identifier}/cases`}
+                      counter={stats.number_cases}
+                      icon={BriefcaseIcon}
+                    >
+                      Cases
+                    </UnderlineNav.Item>
+                    <UnderlineNav.Item
+                      as={NavLink}
+                      to={`/workspace/${workspace.id}/${aggregate._identifier}/aggregates`}
+                      counter={stats.number_aggregates}
+                      icon={ChecklistIcon}
+                    >
+                      Aggregates
+                    </UnderlineNav.Item>
+                  </UnderlineNav>
+                </PageHeader.Navigation>
               </PageHeader>
             </SplitPageLayout.Header>
             <SplitPageLayout.Pane
               divider={"line"}
+              aria-label="Navigation"
               resizable={true}
               sticky={true}
             >
@@ -150,38 +203,6 @@ export default function WorkspaceRoot() {
               <TreeNavigation up={3} />
             </SplitPageLayout.Pane>
             <SplitPageLayout.Content padding="condensed" width="full">
-              <UnderlineNav aria-label="Process Overview">
-                <UnderlineNav.Item
-                  as={NavLink}
-                  to={`/workspace/${workspace.id}/${aggregate._identifier}/`}
-                  icon={CommentDiscussionIcon}
-                >
-                  Overview
-                </UnderlineNav.Item>
-                <UnderlineNav.Item
-                  as={NavLink}
-                  to={`/workspace/${workspace.id}/${aggregate._identifier}/diagram`}
-                  icon={WorkflowIcon}
-                >
-                  Process Map
-                </UnderlineNav.Item>
-                <UnderlineNav.Item
-                  as={NavLink}
-                  to={`/workspace/${workspace.id}/${aggregate._identifier}/cases`}
-                  counter={stats.number_cases}
-                  icon={BriefcaseIcon}
-                >
-                  Cases
-                </UnderlineNav.Item>
-                <UnderlineNav.Item
-                  as={NavLink}
-                  to={`/workspace/${workspace.id}/${aggregate._identifier}/aggregates`}
-                  counter={stats.number_aggregates}
-                  icon={ChecklistIcon}
-                >
-                  Aggregates
-                </UnderlineNav.Item>
-              </UnderlineNav>
               <Outlet />
             </SplitPageLayout.Content>
           </SplitPageLayout>

@@ -1,16 +1,12 @@
 import logging
-import pickle
 from typing import Callable
 
-from models import JobList, Job, Workspace
+from models import Job, Workspace, JobList
 
 import cache.cache as cache
-import pathlib
 import controllers.init_event_log  as init_event_log
 
 from util.multiprocessing.pool_factory import PoolFactory
-
-import pandas as pd
 
 from fastapi import FastAPI
 
@@ -29,7 +25,7 @@ def create_start_app_handler(
 
         repo = ConfigurationRepositoryFactory.get_config_repository()
         conf = repo.get_configuration()
-        cache.joblist = JobList()        
+        cache.joblist = JobList()   
         print('loaded configuration', conf.author)
         repo.save_configuration(conf)
         if conf.current_workspace_id is not None:

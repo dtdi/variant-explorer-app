@@ -6,7 +6,8 @@ from appdirs import user_config_dir
 import os
 import errno
 
-from models import Workspace,Configuration, Setting
+from models.workspace import Workspace
+from models.configuration import Configuration, Setting
 
 from datetime import datetime
 from uuid import UUID, uuid4

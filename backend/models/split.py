@@ -2,10 +2,8 @@
 from pydantic import BaseModel
 from uuid import UUID, uuid4
 from datetime import datetime
-from pathlib import Path
-import shutil
-import os
-from models.aggregate import Aggregate
+
+
 
 class Split(BaseModel):
     id: UUID = None

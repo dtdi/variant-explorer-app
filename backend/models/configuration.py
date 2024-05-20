@@ -2,7 +2,7 @@ from . import Workspace
 from uuid import UUID, uuid4
 from pydantic import BaseModel, computed_field
 from typing import Union
-
+from models.workspace import Workspace
 
 class Setting(BaseModel):
     value: Union[str, int, float, bool]
@@ -19,8 +19,6 @@ class Configuration(BaseModel):
     @computed_field
     def count_workspaces(self):
         return len(self.workspaces)
-
-   
 
     def get_settings(self):
       settings_dict = {}
@@ -62,14 +60,17 @@ class Configuration(BaseModel):
           self.settings[name] = Setting(value=value, type=setting_type)
 
     def set_setting(self, name: str, value: str, type: str):
-       
         self.settings[name] = Setting(value=value, type=type)
         
 
     def get_workspace(self, workspace_id: UUID) -> Workspace:
+        workspace = None
         for w in self.workspaces:
             if w.id == workspace_id:
-                return w
+                workspace = w
+        if workspace is None:
+            raise ValueError(f"Workspace {str(workspace_id)} not found")
+        return workspace
 
     def add_workspace(self, workspace: Workspace):
         workspace.ensure_directory()
@@ -81,4 +82,6 @@ class Configuration(BaseModel):
                 self.workspaces[i] = workspace
 
     def delete_workspace(self, workspace_id: UUID):
+        workspace = self.get_workspace(workspace_id)
+        workspace.delete()
         self.workspaces = [w for w in self.workspaces if w.id != workspace_id]

@@ -6,7 +6,9 @@ import cache.cache as cache
 from typing import Union
 import pandas as pd
 
-from models import Workspace, Job, Stats
+from models.workspace import Workspace
+from models.job import Job
+from models.stats import Stats
 
 
 import cache.cache as cache
@@ -36,7 +38,6 @@ class WorkspaceInput(BaseModel):
 class WorkspaceMin(BaseModel):
     id: UUID
 
-
 @router.get("/getWorkspaceColumns/{workspace_id}")
 async def get_workspace_columns(workspace_id: UUID, repo: ConfigurationRepository = Depends(get_config_repo)):
     conf = repo.get_configuration()
@@ -47,8 +48,7 @@ async def get_workspace_columns(workspace_id: UUID, repo: ConfigurationRepositor
     
     load_job = Job(
       workspace_id=workspace_id, 
-      job_name="load_workspace",
-      job_data={ "workspace": workspace }
+      job_name="load_workspace"
     )
 
     cache.joblist.add_job( load_job )
@@ -94,23 +94,20 @@ async def get_workspaces(repo: ConfigurationRepository = Depends(get_config_repo
     conf = repo.get_configuration()
     return conf.workspaces
 
-@router.get("/getWorkspaces/{workspace_id}")
-async def get_workspaces(workspace_id: UUID, repo: ConfigurationRepository = Depends(get_config_repo)):
-    conf = repo.get_configuration()
-    workspace: Workspace = conf.get_workspace(workspace_id=workspace_id)
-
-    conf.current_workspace_id = workspace.id
-    repo.save_configuration(conf)
-    
+async def _load_workspace(id: UUID, repo: ConfigurationRepository):
+       
     load_job = Job(
-      workspace_id=workspace_id, 
+      workspace_id=id, 
       job_name="load_workspace",
-      job_data={ "workspace": workspace }
     )
 
     cache.joblist.add_job( load_job )
-    await load_workspace(load_job)
+    workspace = await load_workspace(load_job)
+    return workspace
 
+@router.get("/getWorkspaces/{workspace_id}")
+async def get_workspaces(workspace_id: UUID, repo: ConfigurationRepository = Depends(get_config_repo)):
+    workspace = await _load_workspace(id=workspace_id, repo=repo)
     return { "workspace": workspace }
 
 @router.get("/getWorkspace/{workspace_id}/{aggregate_id}")
@@ -118,26 +115,13 @@ async def get_workspace(workspace_id: UUID,
                          aggregate_id: Union[UUID,str], 
                          background_tasks: BackgroundTasks,
                          repo: ConfigurationRepository = Depends(get_config_repo)):
-    conf = repo.get_configuration()
-    workspace: Workspace = conf.get_workspace(workspace_id=workspace_id)
-
-    conf.current_workspace_id = workspace.id
-    repo.save_configuration(conf)
-
-    load_job = Job(
-      workspace_id=workspace_id, 
-      job_name="load_workspace",
-      job_data={ "workspace": workspace }
-    )
-
-    cache.joblist.add_job( load_job )
-    await load_workspace(load_job)
-    print(aggregate_id, workspace_id)
+    
+    workspace = await _load_workspace(id=workspace_id, repo=repo)
     
     tree = cache.tree
     node = tree.get_node(str(aggregate_id))
     breadcrumbs, level = tree.get_breadcrumbs(node.identifier)
-    cache.current_aggregate = node.data
+    cache.aggregate = node.data
 
     return { "workspace": workspace, "aggregate": node, "stats": node.data.stats,"breadcrumbs": breadcrumbs, "level": level}
 

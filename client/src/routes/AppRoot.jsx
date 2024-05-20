@@ -43,9 +43,9 @@ export default function AppRoot() {
     <ThemeProvider>
       <BaseStyles>
         <PageLayout padding="none" containerWidth="full">
-          <PageLayout.Header padding={"condensed"}>
+          <PageLayout.Header padding={"none"} sx={{ bg: "canvas.inset" }}>
             <PageHeader>
-              <PageHeader.TitleArea>
+              <PageHeader.TitleArea sx={{ p: 3, pb: 0 }}>
                 <PageHeader.LeadingAction>
                   <IconButton
                     ref={returnFocusRef}
@@ -63,6 +63,7 @@ export default function AppRoot() {
                   <UnderlineNav.Item
                     icon={FileDirectoryIcon}
                     counter={appState.workspaces.length}
+                    aria-current="page"
                     as={NavLink}
                     to="/"
                   >
@@ -83,7 +84,7 @@ export default function AppRoot() {
               </PageHeader.Navigation>
             </PageHeader>
           </PageLayout.Header>
-          <PageLayout.Content padding="condensed">
+          <PageLayout.Content width="xlarge" padding="condensed">
             {sidebarOpen && (
               <Dialog
                 title={appState.name}
@@ -96,7 +97,6 @@ export default function AppRoot() {
             )}
             <Outlet />
           </PageLayout.Content>
-          <PageLayout.Footer></PageLayout.Footer>
         </PageLayout>
       </BaseStyles>
     </ThemeProvider>
