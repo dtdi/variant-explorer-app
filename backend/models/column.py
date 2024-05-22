@@ -7,7 +7,8 @@ MAX_BINS_TO_HANDLE = 30
 
 class Column(BaseModel):
     id: UUID = uuid4()
-    order: int = 0
+    order: int = 9999
+    visible: bool = True
     name: str
     name_tech: int = 0
     display_name: str
@@ -21,9 +22,12 @@ class Column(BaseModel):
         self.infer_aggregate_column_type()
         if self.name == 'case:concept:name':
             self.event_log_column = 'case_id'
+            self.order = 0
         if self.name == 'case:@@caseDuration':
+            self.order = 2
             self.event_log_column = 'duration'
         if self.name == 'case:@@startTime':
+            self.order = 1
             self.event_log_column = 'start_time'
         if self.name == 'case:@@endTime':
             self.event_log_column = 'end_time'
@@ -35,8 +39,15 @@ class Column(BaseModel):
             self.event_log_column = 'sojourn_time'
         if self.name == 'case:##len':
             self.event_log_column = 'length'
+            self.order = 3
         if self.name == 'case:##variant_str':
             self.event_log_column = 'variant'
+        if self.name == 'case:@@arrival_rate':
+            self.event_log_column = 'arrival_rate'
+        if self.name == 'case:@@diff_start_end':
+            self.event_log_column = 'diff_start_end'
+        if self.name.startswith('bin||'):
+            self.visible = False
 
     def infer_aggregate_column_type(self):
         if self.type == "bool":

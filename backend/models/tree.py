@@ -5,6 +5,8 @@ import json
 from uuid import UUID, uuid4
 import models as models
 
+from models.aggregate import Stats
+
 class Tree(_Tree):
   def to_map(self) -> dict:
     nodes = self.all_nodes()
@@ -33,10 +35,13 @@ class Tree(_Tree):
     for name, cases in grouped:
       new_agg = models.aggregate.Aggregate(
          id=uuid4(),
-        name=str(name),
+        name=splitter.aggregate_name(name, agg),
+        split=splitter.split_model,
         workspace_id=agg.workspace_id,
         cases=cases,
-        )
+        stats=Stats(),
+
+      )
       new_agg.initialize()
       new_agg.save()
       print(f"Splitting {new_agg.name} into {new_agg.id}")

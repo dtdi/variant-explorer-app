@@ -64,7 +64,7 @@ def add_recommended_bin_columns(df_meta, df):
 
     if len(new_columns) > 0:
       added_df = _describe_dataframe(df[new_columns])
-      df_meta.update(added_df)
+      df_meta = pd.concat([df_meta, added_df])
     return df_meta
 
 
@@ -96,7 +96,6 @@ def recommend_treat_as(df_description):
     return df_description
 
 def _describe_dataframe(df):
-    df = df.reset_index()
     description = pd.DataFrame({
       'name': [convert_to_nice_string(col) for col in df.columns],
       'column': df.columns,
@@ -116,7 +115,7 @@ def _describe_dataframe(df):
     description = recommend_conversion(description)
     description = recommend_binning(description, df)
     description = recommend_treat_as(description)
-    description = add_recommended_bin_columns(description, df)
+    #description = add_recommended_bin_columns(description, df)
    
     return description
 
@@ -124,6 +123,7 @@ def _describe_dataframe(df):
 def apply(cases: pd.DataFrame):
   try:
     meta = _describe_dataframe(cases)
+
     return meta
   except Exception as err: 
       traceback.print_exc()

@@ -2,9 +2,11 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from datetime import datetime
 from uuid import UUID, uuid4
-from typing import Union
+from typing import Union,Optional
 from models import Aggregate, Tree
 import pmxplain.algo.split.split as split
+import json
+
 
 import cache.cache as cache
 
@@ -29,7 +31,10 @@ class SplitInput(BaseModel):
    aggregate_id: Union[str,UUID] = None
    workspace_id: UUID
    split_type: str = "groupBy"
-   by: str
+   bins: Optional[int] = None
+   q: Optional[int] = None
+   query: Optional[str] = None
+   by: list[str] = []
 
 @router.post("/splitAggregate")
 async def split_aggregate(d: SplitInput):
@@ -37,9 +42,13 @@ async def split_aggregate(d: SplitInput):
   node = tree.get_node(d.aggregate_id)
 
   if d.split_type == "groupBy":
-    splitter = split.GroupBySplit([d.by])
+    splitter = split.GroupBySplit(d.by)
+  elif d.split_type == "cut":
+    splitter = split.CutSplit(d.by[0], d.bins)
+  elif d.split_type == "qcut":
+    splitter = split.QCutSplit()
   else:
-    splitter = split.GroupBySplit([d.by])
+    splitter = split.GroupBySplit(d.by)
 
   tree.split_node(node, splitter)
   cache.workspace.save()
@@ -61,5 +70,19 @@ async def get_aggregates(aggregate_id: Union[str,UUID] = None, up:int = None):
 async def get_flat_aggregates(aggregate_id: Union[str,UUID] = None):
     tree = cache.tree
     node = tree.get_node(aggregate_id)
-    
+
     return { "aggregates": node.successors }
+
+@router.get("/{aggregate_id}/columns")
+async def get_aggregate_columns(aggregate_id: Union[str,UUID] = None):
+    columns = ['name', 'name_tech', 'category', 'has_nan_values',
+       'distinct_values', 'fraction_of_distinct_values', 'missing_values',
+       'recommended_conversion', 'bin_sizes', 'treat_as', 'mean',
+      ]
+
+    meta = cache.aggregate.meta[columns].to_json(orient='records')
+    rows = json.loads(meta)
+
+    columns = [ { "header": col, "field": col } for col in columns]
+    
+    return { "rows": rows, "columns": columns }

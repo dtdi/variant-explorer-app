@@ -51,7 +51,7 @@ def dataframe_to_activity_case_table(df: pd.DataFrame, parameters: Optional[Dict
 
     activity_table = df[list(event_attributes.union({case_id_key}))]
     case_table = df[list(case_attributes.union({case_id_key}))].groupby(case_id_key).first().reset_index()
-    case_table.set_index('case:concept:name', inplace=True)
+    case_table.set_index('case:concept:name', inplace=True, drop=False)
     return activity_table, case_table
 
 

@@ -15,12 +15,15 @@ import {
   Breadcrumbs,
   SplitPageLayout,
   Heading,
+  Label,
+  LabelGroup,
 } from "@primer/react";
 import { Hidden, PageHeader } from "@primer/react/experimental";
 import {
   ArrowRightIcon,
   BriefcaseIcon,
   ChecklistIcon,
+  ColumnsIcon,
   CommentDiscussionIcon,
   CommitIcon,
   DownloadIcon,
@@ -28,6 +31,8 @@ import {
   FoldUpIcon,
   GearIcon,
   GraphIcon,
+  PencilIcon,
+  PinIcon,
   ReplyIcon,
   RepoIcon,
   ThreeBarsIcon,
@@ -43,6 +48,9 @@ import {
 import TreeNavigation from "../components/Navigation/TreeNavigation";
 
 import { useLoaderData, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { formatDuration } from "../utils";
+import { Icon } from "reaflow";
 
 export async function action({ params, request }) {
   let formData = await request.formData();
@@ -57,9 +65,9 @@ export async function loader({ params }) {
 
   const apiUrl = "http://localhost:41211";
 
-  const data = await fetch(
+  const data = await axios(
     `${apiUrl}/workspaces/getWorkspace/${workspaceId}/${aggregateId}`
-  ).then((res) => res.json());
+  ).then((res) => res.data);
 
   return data;
 }
@@ -67,7 +75,18 @@ export async function loader({ params }) {
 export const AggregateContext = React.createContext();
 
 export default function WorkspaceRoot() {
-  const { workspace, aggregate, stats, breadcrumbs } = useLoaderData();
+  const { workspace, aggregate, stats, breadcrumbs, explanation } =
+    useLoaderData();
+
+  const formatLabelValue = (value) => {
+    if (value.display_as === "duration") {
+      return formatDuration(value.value);
+    }
+    if (value.display_as === "number") {
+      return formantNumber(value.value);
+    }
+    return value.value;
+  };
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
@@ -75,38 +94,36 @@ export default function WorkspaceRoot() {
   return (
     <ThemeProvider>
       <BaseStyles>
-        <AggregateContext.Provider value={{ workspace, aggregate, stats }}>
+        <AggregateContext.Provider
+          value={{ workspace, aggregate, stats, explanation }}
+        >
           <SplitPageLayout containerWitdth="fullWidth">
             <SplitPageLayout.Header
               sx={{ bg: "canvas.inset" }}
               padding={"none"}
             >
               <PageHeader>
-                <PageHeader.TitleArea
-                  sx={{ p: 3, pb: 0, alignItems: "center" }}
-                >
-                  <PageHeader.LeadingAction>
-                    <IconButton
-                      icon={ReplyIcon}
-                      aria-label="Menu"
-                      variant="invisible"
-                      onClick={() => navigate("/")}
-                    />
-                  </PageHeader.LeadingAction>
-                  <Breadcrumbs>
-                    {breadcrumbs.map((b, idx) => (
-                      <Breadcrumbs.Item
-                        selected={idx === breadcrumbs.length - 1}
-                        onClick={() =>
-                          navigate(`/workspace/${workspace.id}/${b.id}`)
-                        }
-                        key={b.id}
-                      >
-                        {b.name}
-                      </Breadcrumbs.Item>
-                    ))}
-                  </Breadcrumbs>
-                  <PageHeader.Actions>
+                <PageHeader.ContextArea sx={{ p: 3, pb: 0 }} hidden={false}>
+                  <PageHeader.ParentLink
+                    hidden={false}
+                    onClick={() => navigate("/")}
+                  ></PageHeader.ParentLink>
+                  <PageHeader.ContextBar hidden={false}>
+                    <Breadcrumbs>
+                      {breadcrumbs.map((b, idx) => (
+                        <Breadcrumbs.Item
+                          selected={idx === breadcrumbs.length - 1}
+                          onClick={() =>
+                            navigate(`/workspace/${workspace.id}/${b.id}`)
+                          }
+                          key={b.id}
+                        >
+                          {b.name}
+                        </Breadcrumbs.Item>
+                      ))}
+                    </Breadcrumbs>
+                  </PageHeader.ContextBar>
+                  <PageHeader.ContextAreaActions hidden={false}>
                     <IconButton
                       aria-label="Bookmarks"
                       icon={RepoIcon}
@@ -115,28 +132,64 @@ export default function WorkspaceRoot() {
                       }}
                     />
                     <IconButton
-                      aria-label="Download Aggregate Log"
-                      icon={DownloadIcon}
-                    />
-                    <IconButton aria-label="Insights" icon={GraphIcon} />
-                    <Button variant="primary" trailingVisual={TriangleDownIcon}>
-                      Add Item
-                    </Button>
-                    <IconButton
                       aria-label="Workspace Settings"
                       icon={GearIcon}
                       onClick={() => {
                         navigate(`/workspace/settings/${workspace.id}`);
                       }}
                     />
+                  </PageHeader.ContextAreaActions>
+                </PageHeader.ContextArea>
+                <PageHeader.TitleArea
+                  sx={{ p: 3, pt: 0, pb: 0, alignItems: "center" }}
+                >
+                  <PageHeader.Title>{aggregate.data.name}</PageHeader.Title>
+                  <PageHeader.TrailingAction>
+                    <IconButton
+                      icon={PencilIcon}
+                      aria-label="Rename Group"
+                      variant="invisible"
+                      onClick={() => navigate("/")}
+                    />
+                  </PageHeader.TrailingAction>
+
+                  <PageHeader.Actions>
+                    <IconButton aria-label="Pin Aggregate" icon={PinIcon} />
+                    <Button variant="primary" trailingVisual={TriangleDownIcon}>
+                      Add Item
+                    </Button>
+                    <IconButton
+                      aria-label="Download Group as Event Log"
+                      icon={DownloadIcon}
+                    />
                   </PageHeader.Actions>
                 </PageHeader.TitleArea>
-                <PageHeader.Description sx={{ pl: 3, pr: 3 }}>
-                  <Text sx={{ fontSize: 1, color: "fg.muted" }}>
+                <PageHeader.Description sx={{ pl: 3, pr: 3, display: "flex" }}>
+                  <Text
+                    as="div"
+                    sx={{
+                      fontSize: 1,
+                      color: "fg.muted",
+                      flexGrow: 1,
+                      minWidth: "400px",
+                    }}
+                  >
                     Part of the <BranchName>{workspace.name}</BranchName>{" "}
                     <BranchName>{stats.number_cases} cases</BranchName>{" "}
                     <BranchName>{stats.number_events} events</BranchName>
                   </Text>
+                  <LabelGroup
+                    sx={{ flexShrink: 1 }}
+                    overflowStyle="overlay"
+                    visibleChildCount={3}
+                  >
+                    {explanation?.final_event_log_columns.map((column) => (
+                      <Label variant="success">
+                        {column.value.display_name}:{" "}
+                        {formatLabelValue(column.value)}
+                      </Label>
+                    ))}
+                  </LabelGroup>
                 </PageHeader.Description>
                 <PageHeader.Navigation>
                   <UnderlineNav aria-label="Process Overview">
@@ -166,10 +219,21 @@ export default function WorkspaceRoot() {
                     <UnderlineNav.Item
                       as={NavLink}
                       to={`/workspace/${workspace.id}/${aggregate._identifier}/aggregates`}
-                      counter={stats.number_aggregates}
+                      counter={
+                        aggregate._successors[aggregate._initial_tree_id]
+                          ?.length
+                      }
                       icon={ChecklistIcon}
                     >
                       Aggregates
+                    </UnderlineNav.Item>
+                    <UnderlineNav.Item
+                      icon={ColumnsIcon}
+                      as={NavLink}
+                      counter={aggregate.data.columns.length}
+                      to={`/workspace/${workspace.id}/${aggregate._identifier}/columns`}
+                    >
+                      Fields
                     </UnderlineNav.Item>
                   </UnderlineNav>
                 </PageHeader.Navigation>

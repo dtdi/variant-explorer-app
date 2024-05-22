@@ -31,6 +31,9 @@ import CasesPage from "./pages/Aggregate/CasesPage";
 import AggregatesPage, {
   loader as aggregatesLoader,
 } from "./pages/Aggregate/AggregatesPage";
+import ColumnsPage, {
+  loader as columnsLoader,
+} from "./pages/Aggregate/ColumnsPage";
 import OverviewPage, {
   loader as overviewLoader,
 } from "./pages/Aggregate/OverviewPage";
@@ -98,6 +101,11 @@ const router = createBrowserRouter([
         path: "/workspace/:workspaceId/:aggregateId/aggregates",
         loader: aggregatesLoader,
         element: <AggregatesPage />,
+      },
+      {
+        path: "/workspace/:workspaceId/:aggregateId/columns",
+        loader: columnsLoader,
+        element: <ColumnsPage />,
       },
     ],
   },

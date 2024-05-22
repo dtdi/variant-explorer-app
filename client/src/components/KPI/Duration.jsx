@@ -1,28 +1,31 @@
 import { Box, Heading, Text } from "@primer/react";
-import { formatDuration, formatNumber } from "../../utils";
+import { formatDuration } from "../../utils";
 
 export default function Base({ column }) {
   if (!column) {
     return null;
   }
   return (
-    <Box sx={{ bg: "canvas.inset", p: 3, borderRadius: 2 }}>
+    <Box
+      className="shadow-sm"
+      sx={{ bg: "canvas.inset", p: 3, borderRadius: 2 }}
+    >
       <h5 className="">{column.display_name}</h5>
       <div className="d-flex justify-content-between">
         <span className="fw-medium">max:</span>
-        <span>{formatNumber(column.stats.max)}</span>
+        <span>{formatDuration(column.stats.max)}</span>
       </div>
       <div className="d-flex justify-content-between">
         <span className="fw-medium">mean:</span>
-        <span>{formatNumber(column.stats.mean)}</span>
+        <span>{formatDuration(column.stats.mean)}</span>
       </div>
       <div className="d-flex justify-content-between">
         <span className="fw-medium">median:</span>
-        <span>{formatNumber(column.stats.median)}</span>
+        <span>{formatDuration(column.stats.median)}</span>
       </div>
       <div className="d-flex justify-content-between">
         <span className="fw-medium">min:</span>
-        <span>{formatNumber(column.stats.min)}</span>
+        <span>{formatDuration(column.stats.min)}</span>
       </div>
     </Box>
   );

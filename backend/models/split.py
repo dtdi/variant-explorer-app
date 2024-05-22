@@ -2,16 +2,13 @@
 from pydantic import BaseModel
 from uuid import UUID, uuid4
 from datetime import datetime
+from typing import Optional
 
 
 
 class Split(BaseModel):
-    id: UUID = None
-    name: str
-    description: str
-    created_at: datetime
-    can_edit: bool
-    can_delete: bool
-    log_file: str = None
-    log_name: str = None
-    type: str = None
+    id: UUID = uuid4()
+    name: Optional[str] = None
+    description: Optional[str] = None
+    type: Optional[str] = None
+    created_at: datetime = datetime.now()

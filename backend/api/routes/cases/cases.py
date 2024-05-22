@@ -1,16 +1,11 @@
 
 from fastapi import APIRouter
-from datetime import datetime
 from uuid import UUID, uuid4
-from typing import Union
-import pm4py
+from typing import Union, Optional
 import json
 import pandas as pd
-from pm4py.algo.filtering.dfg import dfg_filtering
-from pm4py.util import constants
 import cache.cache as cache
 from pydantic import BaseModel
-from fastapi_pagination import Page, paginate
 from models import Column
 
 router = APIRouter(tags=["cases"], prefix="/cases")
@@ -20,14 +15,14 @@ class CaseInput(BaseModel):
     aggregate_id: Union[UUID,str]
     page: int = 0
     page_size: int = 10
-    columns: list[int] = [1,2,26,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,27]
+    columns: Optional[list[int]] = None
     sortings: str = None
 
 @router.post("/")
 async def get_cases(c: CaseInput):
-    df: pd.DataFrame = cache.aggregate.cases.reset_index()
+    df: pd.DataFrame = cache.aggregate.cases
 
-    all_columns: list[Column] = cache.aggregate.columns
+    all_columns: list[Column] = sorted( list(filter( lambda x: x.visible and not x.is_final , cache.aggregate.columns)) , key=lambda x: x.order)
 
     df = df.rename(columns={col.name: col.name_tech for col in all_columns}, inplace=False,)
     
@@ -37,7 +32,13 @@ async def get_cases(c: CaseInput):
     out = df.iloc[start_index:end_index]
   
     columns = []
-    for c_idx in c.columns:
+
+    if c.columns is None:
+        col_order = [col.name_tech for col in all_columns]
+    else:
+        col_order = c.columns
+
+    for c_idx in col_order:
         agg_col = next((col for col in all_columns if col.name_tech == c_idx), None)
         if agg_col is None:
             continue
@@ -53,6 +54,3 @@ async def get_cases(c: CaseInput):
     }
     
     return { "columns": columns, "cases": rows, "table_data": table_data}
-
-
-

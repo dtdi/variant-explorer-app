@@ -122,8 +122,9 @@ async def get_workspace(workspace_id: UUID,
     node = tree.get_node(str(aggregate_id))
     breadcrumbs, level = tree.get_breadcrumbs(node.identifier)
     cache.aggregate = node.data
+    explanation = node.data.explanation
 
-    return { "workspace": workspace, "aggregate": node, "stats": node.data.stats,"breadcrumbs": breadcrumbs, "level": level}
+    return { "workspace": workspace, "aggregate": node, "stats": node.data.stats,"breadcrumbs": breadcrumbs, "level": level, "explanation": explanation}
 
 @router.post("/initLog") 
 async def init_log(d: WorkspaceMin, background_tasks: BackgroundTasks, repo: ConfigurationRepository = Depends(get_config_repo), ):

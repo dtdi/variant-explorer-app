@@ -46,6 +46,8 @@ class ColumnInput(BaseModel):
     analysis_category: Optional[str]
     event_log_column: Optional[str]
     display_name: str
+    order: int
+    visible: bool
     type: str
     description: Optional[str] = None
 
@@ -56,6 +58,8 @@ async def edit_column(workspace_id: UUID, column: ColumnInput):
 
     col.display_name = column.display_name
     col.type = column.type
+    col.visible = column.visible
+    col.order = column.order
     col.description = column.description
     col.analysis_category = column.analysis_category
     col.event_log_column = column.event_log_column

@@ -92,9 +92,12 @@ export default function AppOverview() {
           borderRadius: 2,
         }}
       >
-        <Heading as="h4">Variant Explorer</Heading>
-        <Text as="p">
-          A tool for visualy analysing you process mining data.
+        <h4>Variant Explorer</h4>
+        <Text as="p" className="">
+          A tool for visualy analysing you process mining data. ExploreLog is a
+          web application designed for exploring and analyzing process mining
+          event logs. It offers tools to visualize and examine process data,
+          helping users identify inefficiencies and improve workflow operations.
         </Text>
         <ActionList variant="full">
           <ActionList.LinkItem>asd</ActionList.LinkItem>

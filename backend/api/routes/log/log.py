@@ -10,6 +10,7 @@ from pm4py.util import constants
 import cache.cache as cache
 from pydantic import BaseModel
 from fastapi_pagination import Page, paginate
+from models.aggregate_column import strfdelta
 
 
 router = APIRouter(tags=["log"], prefix="/log")
@@ -58,6 +59,10 @@ async def get_diagram(d: DiagramInput):
   edges = []
   for key, value in dfg.items():
       source, target = key
+      if d.decoration == "freq":
+        value = value
+      else:
+        value = strfdelta(value, truncate=True, inputtype='s')
       edge = {
         'id': f"{source}-{target}",
         'from': source,

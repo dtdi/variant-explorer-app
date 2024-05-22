@@ -6,6 +6,17 @@ import { DiffAddedIcon, WorkflowIcon } from "@primer/octicons-react";
 import axios from "axios";
 import { ApiContext } from "../../main";
 
+const splitColorMap = {};
+
+const getSplitColor = (split) => {
+  if (!splitColorMap[split]) {
+    splitColorMap[split] = `#${Math.floor(Math.random() * 16777215).toString(
+      16
+    )}`;
+  }
+  return splitColorMap[split];
+};
+
 function TreeNavigation({ data, children, level }) {
   const { workspace, aggregate } = useContext(AggregateContext);
   const navigate = useNavigate();
@@ -21,9 +32,10 @@ function TreeNavigation({ data, children, level }) {
       <TreeView.LeadingVisual>
         {children ? <TreeView.DirectoryIcon /> : <WorkflowIcon />}
       </TreeView.LeadingVisual>
-      {data.name}
+      <span style={{ color: getSplitColor(data?.split?.id) }}>{data.name}</span>
+
       <TreeView.TrailingVisual>
-        <Label>{data.stats.number_cases}</Label>
+        <Label variant="secondary">{data.stats.number_cases}</Label>
       </TreeView.TrailingVisual>
       {children && (
         <TreeView.SubTree>
