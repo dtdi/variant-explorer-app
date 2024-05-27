@@ -12,3 +12,6 @@ class Split(BaseModel):
     description: Optional[str] = None
     type: Optional[str] = None
     created_at: datetime = datetime.now()
+
+    def __str__(self):
+        return f"{self.name} ({self.type}) {self.description}"

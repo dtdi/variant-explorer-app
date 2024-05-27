@@ -13,11 +13,13 @@ import {
 import axios from "axios";
 import { useLoaderData } from "react-router-dom";
 import { AggregateContext } from "../../routes/AggregateRoot";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import ColumnSplitter from "../../components/Splitter/ColumnSplitter";
 import MultiColumnSplitter from "../../components/Splitter/MultiColumnSplitter";
 import { formatDuration, formatNumber } from "../../utils";
 import Base from "../../components/KPI/Base";
+import BaseColumnBox from "../../components/ColumnBox/Base";
+
 import Duration from "../../components/KPI/Duration";
 import { DataTable, PageHeader, Table } from "@primer/react/drafts";
 import { GitBranchIcon, PencilIcon } from "@primer/octicons-react";
@@ -35,11 +37,32 @@ export default function OverviewPage() {
   const { workspace, aggregate, stats, explanation } =
     useContext(AggregateContext);
 
+  const [variantCounts, setVariantCounts] = useState({});
+
+  useEffect(() => {
+    setVariantCounts(
+      aggregate.data.columns.find(
+        (column) => column.event_log_column === "variant"
+      )
+    );
+  }, [aggregate]);
+
   const getColumnByName = (name) => {
     const column = aggregate.data.columns.find(
       (column) => column.event_log_column === name
     );
     return column;
+  };
+
+  const nl2br = (str) => {
+    return str.split("\n").map((item, key) => {
+      return (
+        <span key={key}>
+          {item}
+          <br />
+        </span>
+      );
+    });
   };
 
   return (
@@ -54,29 +77,52 @@ export default function OverviewPage() {
           mb: 3,
         }}
       >
-        {" "}
-        <p>{aggregate.data.description} asdfasdf</p>
+        <p>{nl2br(aggregate.data.description)}</p>
+
         <Duration column={getColumnByName("duration")} />
         <Base column={getColumnByName("length")} />
         <Duration column={getColumnByName("finish_rate")} />
         <Duration column={getColumnByName("sojourn_time")} />
       </Box>
-      <Table.Container sx={{ mt: 3, mb: 3 }}>
-        <Table.Title as="h2" id="shared-properties">
-          Shared Properties
-        </Table.Title>
-        <Table.Subtitle as="p" id="shared-properties-subtitle">
-          These properties are shared by all cases in the group.
-        </Table.Subtitle>
-        <DataTable
-          cellPadding="condensed"
-          columns={[
-            { header: "Property", rowHeader: true, field: "display_name" },
-            { header: "Value", field: "value" },
-          ]}
-          data={explanation?.final_columns.map((col) => col.value) || []}
-        />
-      </Table.Container>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "2fr 1fr 1fr",
+          gap: 3,
+          mt: 3,
+          mb: 3,
+        }}
+      >
+        <Table.Container sx={{ mt: 3, mb: 3 }}>
+          <Table.Title as="h2" id="shared-properties">
+            Common Case Properties
+          </Table.Title>
+          <Table.Subtitle as="p" id="shared-properties-subtitle">
+            These properties are shared amongst all cases.
+          </Table.Subtitle>
+          <DataTable
+            cellPadding="condensed"
+            columns={[
+              { header: "Property", rowHeader: true, field: "display_name" },
+              { header: "Value", field: "value" },
+            ]}
+            data={explanation?.final_columns.map((col) => col.value) || []}
+          />
+        </Table.Container>
+      </Box>
+
+      <Box sx={{ pt: 3, pb: 3 }}>
+        <PageHeader>
+          <PageHeader.TitleArea>
+            <PageHeader.Title>Case Properties</PageHeader.Title>
+            <PageHeader.Actions>
+              <IconButton icon={GitBranchIcon} aria-label="Split" />
+              <MultiColumnSplitter columns={aggregate.data.columns} />
+            </PageHeader.Actions>
+          </PageHeader.TitleArea>
+        </PageHeader>
+      </Box>
+
       {/* event log columns with > 1 values */}
       <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
         {aggregate.data.columns
@@ -87,64 +133,10 @@ export default function OverviewPage() {
               column.distinct_values > 1
           )
           .map((column) => (
-            <Box
-              sx={{
-                p: 3,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderRadius: 2,
-                borderColor: "border.default",
-              }}
-              key={column.id}
-            >
-              <h6>{column.display_name}</h6>
-              <p>{column.description}</p>
-              <LabelGroup>
-                <Label>{column.distinct_values} distinct</Label>
-                {column.missing_values > 0 && (
-                  <Label variant="danger">
-                    {column.missing_values} missing
-                  </Label>
-                )}
-                {column.event_log_column && (
-                  <Label variant="secondary">{column.event_log_column}</Label>
-                )}
-              </LabelGroup>
-              <ColumnSplitter column={column} />
-
-              {!column.value_dict && (
-                <Box sx={{ fontSize: 0 }}>
-                  <Text sx={{ color: "fg.muted", fontWeight: "bold" }}>
-                    Values:{" "}
-                  </Text>
-                  {!column.value_dict &&
-                    column.head &&
-                    column.head.join(", ") + "..."}
-                </Box>
-              )}
-              {column.value_dict && (
-                <Table.Container>
-                  <DataTable
-                    cellPadding="condensed"
-                    aria-label="Values"
-                    columns={[
-                      { field: "name", header: "Value", rowHeader: true },
-                      {
-                        field: "count",
-                        header: "Count",
-                        align: "end",
-                        sortBy: "basic",
-                      },
-                    ]}
-                    data={Object.entries(column.value_dict).map(
-                      ([key, value]) => ({ name: key, count: value })
-                    )}
-                  />
-                </Table.Container>
-              )}
-            </Box>
+            <BaseColumnBox column={column} key={column.id} />
           ))}
       </Box>
+
       {/* non event log columns with > 1 values => split potnetial */}
       <Box sx={{ pt: 3, pb: 3 }}>
         <PageHeader>
@@ -169,63 +161,7 @@ export default function OverviewPage() {
           )
           .sort((a, b) => a.distinct_values - b.distinct_values)
           .map((column) => (
-            <Box
-              sx={{
-                p: 3,
-                borderWidth: 1,
-                borderStyle: "solid",
-                borderRadius: 2,
-                borderColor: "border.default",
-              }}
-              key={column.id}
-            >
-              <h6 className="fs-6">{column.display_name}</h6>
-              <p>{column.description}</p>
-
-              <LabelGroup>
-                <Label>{column.distinct_values} distinct</Label>
-                {column.missing_values > 0 && (
-                  <Label variant="danger">
-                    {column.missing_values} missing
-                  </Label>
-                )}
-                {column.event_log_column && (
-                  <Label variant="secondary">{column.event_log_column}</Label>
-                )}
-              </LabelGroup>
-              <ColumnSplitter column={column} />
-
-              {!column.value_dict && (
-                <Box sx={{ fontSize: 0 }}>
-                  <Text sx={{ color: "fg.muted", fontWeight: "bold" }}>
-                    Values:{" "}
-                  </Text>
-                  {!column.value_dict &&
-                    column.head &&
-                    column.head.join(", ") + "..."}
-                </Box>
-              )}
-              {column.value_dict && (
-                <Table.Container>
-                  <DataTable
-                    cellPadding="condensed"
-                    aria-label="Values"
-                    columns={[
-                      { field: "name", header: "Value", rowHeader: true },
-                      {
-                        field: "count",
-                        header: "Count",
-                        align: "end",
-                        sortBy: "basic",
-                      },
-                    ]}
-                    data={Object.entries(column.value_dict).map(
-                      ([key, value]) => ({ name: key, count: value })
-                    )}
-                  />
-                </Table.Container>
-              )}
-            </Box>
+            <BaseColumnBox column={column} key={column.id} />
           ))}
       </Box>
     </>

@@ -42,12 +42,19 @@ export default function MultiColumnSplitter({ columns }) {
         navigate(`/workspace/${workspace.id}/${res.data.id}`);
       });
   };
+  if (working_columns.length === 0) {
+    return null;
+  }
   return (
     <AnchoredOverlay
       open={open}
       onClose={toggle}
       onOpen={toggle}
-      renderAnchor={(props) => <Button {...props}>toggle</Button>}
+      renderAnchor={(props) => (
+        <Button title={"Split accross columns"} {...props}>
+          Multisplit
+        </Button>
+      )}
     >
       <ActionList
         selectionVariant="multiple"
@@ -63,12 +70,9 @@ export default function MultiColumnSplitter({ columns }) {
             aria-checked={selectedIndices.includes(index)}
             onSelect={() => handleSelect(index)}
           >
-            <ActionList.LeadingVisual>
-              <TableIcon />
-            </ActionList.LeadingVisual>
             {column.name}
             <ActionList.Description variant="block">
-              {column.distinct_values}
+              {column.distinct_values} distinct values
             </ActionList.Description>
           </ActionList.Item>
         ))}

@@ -32,7 +32,19 @@ class AggregateColumn(BaseModel):
 
     @property
     def llm_string(self):
-        return f"{self.name} ({self.display_name})"
+      ret = ["\n"]
+      ret.append(f"Column: {self.display_name}\n")
+      ret.append(f"Type: {self.type}\n")
+      ret.append(f"Distinct values: {self.distinct_values}\n")
+      ret.append(f"Recommended conversion: {self.recommended_conversion}\n")
+      ret.append(f"Event log column: {self.event_log_column}\n")
+      if self.distinct_values <= MAX_BINS_TO_HANDLE:
+        ret.append(f"Values: {self.value_dict}\n")
+      if self.stats:
+        ret.append(f"Stats: {self.stats}\n")   
+
+      return "".join(ret)
+
     
     @property
     def representative_value(self):
@@ -141,7 +153,7 @@ class AggregateColumn(BaseModel):
 
       return d
 
-    @computed_field(return_type=str)
+    @computed_field(return_type=dict)
     @property
     def column_head(self):         
 

@@ -13,9 +13,9 @@ from fastapi_pagination import Page, paginate
 from models.aggregate_column import strfdelta
 
 
-router = APIRouter(tags=["log"], prefix="/log")
+router = APIRouter(tags=["charts"], prefix="/charts")
 
-class DiagramInput(BaseModel):
+class ChartInput(BaseModel):
     activitiesSlider: float = 0.03
     activityKey: str = 'concept:name'
     workspace: UUID = None
@@ -27,7 +27,7 @@ class DiagramInput(BaseModel):
     dependencyTreshold: float = -1
 
 @router.post("/diagram")
-async def get_diagram(d: DiagramInput): 
+async def get_diagram(d: ChartInput): 
   
   cases = cache.aggregate.cases
   df_l = cache.event_log

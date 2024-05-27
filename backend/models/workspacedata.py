@@ -15,7 +15,7 @@ from models.workspace import Workspace
 class WorkspaceData(BaseModel): 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     columns: Optional[list[Column]] = []
-    collection: Optional[ list[Bookmark]] = []
+    collection: list[Bookmark] = []
     id: UUID
     name: Optional[str] = None
     description: Optional[str] = None
@@ -26,8 +26,10 @@ class WorkspaceData(BaseModel):
         return self.tree
 
     def get_bookmark(self, bookmark_id: UUID) -> Bookmark:
+        
         for bookmark in self.collection:
             if bookmark.id == bookmark_id:
+                print(bookmark.id, bookmark_id)
                 return bookmark
         return None
     

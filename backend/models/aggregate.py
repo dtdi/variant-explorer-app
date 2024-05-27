@@ -13,6 +13,7 @@ from models.stats import Stats
 from models.split import Split
 import os
 import cache.cache as cache
+import shutil
 
 
 
@@ -20,6 +21,7 @@ class Aggregate(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     columns: list[AggregateColumn] = []
     id: Union[UUID,str] = uuid4()
+    bookmark_id: Optional[UUID] = None
     workspace_id: UUID
     name: str = ""
     description: str = ""
@@ -43,11 +45,25 @@ class Aggregate(BaseModel):
               [{ 'name': col.name, 'value': col.representative_value } 
                for col in self.columns if col.is_final and col.event_log_column is None],
         }
+    
 
-    @property
-    def llm_string(self):
+    def get_llm_name(self):
+        return self.name
+
+    def get_llm_description(self):
         ret = ["\n"]
-        ret.append(f"Aggregate: {self.name}")
+        ret.append(f"Aggregate: {self.name}\n")
+        ret.append(f"Description: {self.description}\n")
+        ret.append(f"Split: {str(self.split) if self.split is not None else ''}\n")
+        ret.append(f"Number of cases: {self.stats.number_cases}\n")
+        ret.append(f"Number of variants: {self.stats.number_variants}\n")
+        ret.append(f"Number of events: {self.stats.number_events}\n")
+        ret.append(f"Fraction of total cases: {self.stats.fraction_total_cases}\n")
+        ret.append(f"Fraction of total events: {self.stats.fraction_total_events}\n")
+
+        ret.append("\nColumns:\n")
+        for column in self.columns:
+            ret.append(column.llm_string)
         return "".join(ret)
     
     def get_column_by_name(self, column_name: str) -> AggregateColumn:
@@ -96,9 +112,16 @@ class Aggregate(BaseModel):
         self.stats.number_cases = len(self.cases)
         self.stats.number_variants = int(self.cases['case:##variant_str'].nunique())
         self.stats.number_events = int(self.cases['case:##len'].sum())
+        if cache.root is not None:
+          self.stats.fraction_total_cases = self.stats.number_cases / cache.root.stats.number_cases
+          self.stats.fraction_total_events = self.stats.number_events / cache.root.stats.number_events
+        else:
+          self.stats.fraction_total_cases = 1
+          self.stats.fraction_total_events = 1
 
+        self.description = self.get_llm_description()
 
-
+    
     def boot(self):
         self.cases = pd.read_pickle(self.get_file('cases.pkl'))
         self.meta = pd.read_pickle(self.get_file('meta.pkl'))
@@ -135,6 +158,12 @@ class Aggregate(BaseModel):
       self.dump_files()
       with open(self.get_file('aggregate.json'), 'w+') as f:
           f.write(self.model_dump_json())
+
+    def delete(self):
+      try:
+        shutil.rmtree(self.get_directory(), ignore_errors=True)
+      except FileNotFoundError:
+        pass
 
     @classmethod
     def load(cls, workspace_id: UUID, id: Union[UUID,str]) -> 'Aggregate':

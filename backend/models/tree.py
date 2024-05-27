@@ -1,4 +1,5 @@
 from treelib import Node, Tree as _Tree
+from treelib.exceptions import NodeIDAbsentError
 import models.aggregate
 import pmxplain.algo.split.split as split
 import json
@@ -8,6 +9,44 @@ import models as models
 from models.aggregate import Stats
 
 class Tree(_Tree):
+
+  def _get_nav_dict_data(self, nid):
+    data = self[nid].data
+    return { 
+       "name": data.name, 
+       "id": str(data.id), 
+       "bookmark_id": data.bookmark_id,
+       "stats": data.stats,
+       "description": data.description,
+       "split": data.split if data.split else None}
+
+  def to_nav_dict(self, nid=None, key=None, sort=True, reverse=False):
+        """Transform the whole tree into a dict."""
+
+        nid = self.root if (nid is None) else nid
+        ntag = self[nid].tag
+        tree_dict = {ntag: {"children": []}}
+        tree_dict[ntag]["data"] = self._get_nav_dict_data(nid)
+
+        if self[nid].expanded:
+            queue = [self[i] for i in self[nid].successors(self._identifier)]
+            key = (lambda x: x) if (key is None) else key
+            if sort:
+                queue.sort(key=key, reverse=reverse)
+
+            for elem in queue:
+                tree_dict[ntag]["children"].append(
+                    self.to_nav_dict(
+                        elem.identifier, sort=sort, reverse=reverse
+                    )
+                )
+            if len(tree_dict[ntag]["children"]) == 0:
+                tree_dict = (
+                    {ntag: {"data": self._get_nav_dict_data(nid)}}
+                )
+            return tree_dict
+
+
   def to_map(self) -> dict:
     nodes = self.all_nodes()
     return { str(node._identifier): (None if node.predecessor(self._identifier) is None else str(node.predecessor(self._identifier))) for node in nodes }
@@ -48,6 +87,33 @@ class Tree(_Tree):
       self.create_node(new_agg.name, str(new_agg.id), parent=node, data=new_agg)
 
     return self.children(node._identifier)
+
+  def remove_aggregate(self, identifier):
+        """Remove an aggregate indicated by 'identifier' with all its successors.
+        Return the number of removed nodes.
+        """
+        if not self.contains(identifier):
+            raise NodeIDAbsentError("Node '%s' " "is not in the tree" % identifier)
+
+        parent = self[identifier].predecessor(self._identifier)
+
+        # Remove node and its children
+        removed = list(self.expand_tree(identifier))
+
+        for id_ in removed:
+            if id_ == self.root:
+                self.root = None
+            self.__update_bpointer(id_, None)
+            for cid in self[id_].successors(self._identifier) or []:
+                self.__update_fpointer(id_, cid, self.node_class.DELETE)
+
+        # Update parent info
+        self.__update_fpointer(parent, identifier, self.node_class.DELETE)
+        self.__update_bpointer(identifier, None)
+
+        for id_ in removed:
+            self.nodes.pop(id_)
+        return len(removed)
 
 
   @classmethod

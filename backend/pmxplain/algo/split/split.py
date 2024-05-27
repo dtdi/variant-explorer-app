@@ -199,28 +199,9 @@ class Pm4pyFilterSplit(Split):
     return None
   
 class CutSplit(Split):
-  """
-  A split operation based on cutting a column into bins.
-
-  Attributes:
-    column (str): The column to be cut.
-    bins (int): The number of bins.
-
-  Methods:
-    __init__(column, bins): Initializes the CutSplit class.
-    split(df): Splits the DataFrame by cutting the specified column into bins.
-
-  """
-
+  
   def __init__(self, column, bins):
-    """
-    Initializes the CutSplit class.
-
-    Args:
-      column (str): The column to be cut.
-      bins (int): The number of bins.
-
-    """
+   
     self.column = column
     self.bins = bins
     super().__init__()
@@ -234,56 +215,26 @@ class CutSplit(Split):
     return str(names) + ": " + str(group)
   
   def split(self, df):
-    """
-    Splits the DataFrame by cutting the specified column into bins.
-
-    Args:
-      df (pd.DataFrame): The DataFrame to be split.
-
-    Returns:
-      pd.DataFrameGroupBy: The grouped DataFrame.
-
-    """
+   
     cut = pd.cut(df[self.column], bins=self.bins, include_lowest=True, right=True)
     return df.groupby(cut, dropna=False, group_keys=True)
 
 class QCutSplit(Split): 
-  """
-  A split operation based on quantile cutting a column.
-
-  Attributes:
-    column (str): The column to be cut.
-    q (int): The number of quantiles.
-
-  Methods:
-    __init__(column, q): Initializes the QCutSplit class.
-    split(df): Splits the DataFrame by quantile cutting the specified column.
-
-  """
+  
 
   def __init__(self, column, q):
-    """
-    Initializes the QCutSplit class.
-
-    Args:
-      column (str): The column to be cut.
-      q (int): The number of quantiles.
-
-    """
+   
     self.column = column
     self.q = q
     super().__init__()
 
+  def aggregate_name(self, group, aggregate: Aggregate):
+
+    names = aggregate.get_column_by_name(self.column).display_name
+  
+    return str(names) + ": " + str(group)
+
   def split(self, df):
-    """
-    Splits the DataFrame by quantile cutting the specified column.
-
-    Args:
-      df (pd.DataFrame): The DataFrame to be split.
-
-    Returns:
-      pd.DataFrameGroupBy: The grouped DataFrame.
-
-    """
+   
     cut = pd.qcut(df[self.column], q=self.q, duplicates='drop')
     return df.groupby(cut, dropna=False, group_keys=True)

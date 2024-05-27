@@ -2,17 +2,27 @@ import { useContext, useEffect, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import { AggregateContext } from "../../routes/AggregateRoot";
 import { Label, Octicon, TreeView } from "@primer/react";
-import { DiffAddedIcon, WorkflowIcon } from "@primer/octicons-react";
+import { DiffAddedIcon, PinIcon, WorkflowIcon } from "@primer/octicons-react";
 import axios from "axios";
+import { formatNumber } from "../../utils";
 import { ApiContext } from "../../main";
 
 const splitColorMap = {};
 
-const getSplitColor = (split) => {
+function randomColor(level) {
+  const randomInt = (min, max) => {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  };
+
+  var h = randomInt(0, 36) * 10;
+  var s = Math.min(40 + 10 * level, 90);
+  var l = randomInt(20, 40);
+  return `hsl(${h},${s}%,${l}%)`;
+}
+
+const getSplitColor = (split, level) => {
   if (!splitColorMap[split]) {
-    splitColorMap[split] = `#${Math.floor(Math.random() * 16777215).toString(
-      16
-    )}`;
+    splitColorMap[split] = randomColor(level);
   }
   return splitColorMap[split];
 };
@@ -32,10 +42,15 @@ function TreeNavigation({ data, children, level }) {
       <TreeView.LeadingVisual>
         {children ? <TreeView.DirectoryIcon /> : <WorkflowIcon />}
       </TreeView.LeadingVisual>
-      <span style={{ color: getSplitColor(data?.split?.id) }}>{data.name}</span>
+      <span style={{ color: getSplitColor(data?.split?.id, level) }}>
+        {data.name}
+      </span>
 
       <TreeView.TrailingVisual>
-        <Label variant="secondary">{data.stats.number_cases}</Label>
+        {data.bookmark_id !== null && <Octicon sx={{ mr: 1 }} icon={PinIcon} />}
+        <Label title={`${data.stats.number_cases} cases`} variant="secondary">
+          {formatNumber(data.stats.fraction_total_cases * 100, 1)}%
+        </Label>
       </TreeView.TrailingVisual>
       {children && (
         <TreeView.SubTree>
@@ -74,9 +89,6 @@ export default function AggregateNavigation({ up }) {
     return (
       <TreeView aria-label="Aggregates">
         <TreeView.Item defaultExpanded={true}>
-          <TreeView.LeadingVisual>
-            <WorkflowIcon />
-          </TreeView.LeadingVisual>
           {workspace.name}
           <TreeView.SubTree state="loading" count={15}></TreeView.SubTree>
         </TreeView.Item>

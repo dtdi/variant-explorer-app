@@ -43,13 +43,10 @@ def _import_event_log(log_path: str, workspace: Workspace):
     workspaceData = workspace.data
     workspaceData.init_columns(meta)
     cache.workspace = workspaceData
-
-    print("config saved")
     _refresh_tree(workspaceData, cases, meta)
     
     workspaceData.save()
-
-   
+    cache.workspace = None
   except Exception as e:
     traceback.print_exc()
 
@@ -70,6 +67,7 @@ async def import_event_log(job: Job):
 
     with concurrent.futures.ProcessPoolExecutor() as pool:
         await loop.run_in_executor(pool, _import_event_log, log_path, workspace)
+
     job.complete_job()
     return
 
@@ -80,7 +78,7 @@ async def load_workspace(job: Job):
 
   if cache.workspace is not None and workspace_id == cache.workspace.id:
     job.complete_job()
-    return cache.workspace
+    return
 
   repo = ConfigurationRepositoryFactory.get_config_repository()
   conf = repo.get_configuration()
@@ -105,6 +103,7 @@ async def load_workspace(job: Job):
 
   cache.workspace = workspaceData
   cache.tree = workspaceData.load_tree()
+  cache.root = cache.tree.get_node("root").data
   cache.aggregate = cache.tree.get_node("root").data
   cache.event_log = pd.read_pickle(workspaceData.get_file("log.pkl"))
   job.complete_job()

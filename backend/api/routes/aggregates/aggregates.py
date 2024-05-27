@@ -18,14 +18,32 @@ from models import Workspace, Job, Aggregate
 router = APIRouter(tags=["aggregates"], prefix="/aggregates")
 
 class AggregateInput(BaseModel):
-    id: Union[str,UUID] = None
+    aggregate_id: Union[str,UUID] = None
     workspace_id: UUID
-    name: str
-    description: str = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    ai_magic: Optional[bool] = None
 
 @router.post("/editAggregate")
 async def edit_aggregate(d: AggregateInput):
-  return { "msg": "editAggregate" }
+  aggregate = cache.tree.get_node(d.aggregate_id).data
+  if d.name:
+    aggregate.name = d.name
+  if d.description:
+    aggregate.description = d.description
+  aggregate.save()
+  return { "msg": "editAggregate", "aggregate": aggregate }
+
+@router.delete("/deleteAggregate/{aggregate_id}")
+async def delete_aggregate(aggregate_id: Union[str,UUID]):
+  aggregate = cache.tree.get_node(aggregate_id)
+  parent = aggregate.predecessor(cache.tree._identifier)
+  removed = list(cache.tree.expand_tree(aggregate_id))
+  for node in removed:
+    cache.tree.get_node(node).data.delete()
+  cache.tree.remove_node(aggregate_id)
+  cache.workspace.save()
+  return { "msg": "deleteAggregate", "aggregate_id": aggregate_id, "removed": removed, 'parent_id': parent }
 
 class SplitInput(BaseModel):
    aggregate_id: Union[str,UUID] = None
@@ -41,14 +59,14 @@ async def split_aggregate(d: SplitInput):
   tree: Tree = cache.tree
   node = tree.get_node(d.aggregate_id)
 
-  if d.split_type == "groupBy":
+  if d.split_type == "group_by":
     splitter = split.GroupBySplit(d.by)
   elif d.split_type == "cut":
     splitter = split.CutSplit(d.by[0], d.bins)
-  elif d.split_type == "qcut":
-    splitter = split.QCutSplit()
+  elif d.split_type == "q_cut":
+    splitter = split.QCutSplit(d.by[0], d.q)
   else:
-    splitter = split.GroupBySplit(d.by)
+    return { "msg": "splitAggregate", "error": "Unknown split type" }
 
   tree.split_node(node, splitter)
   cache.workspace.save()
@@ -60,18 +78,18 @@ async def get_aggregates(aggregate_id: Union[str,UUID] = None, up:int = None):
     tree = cache.tree
     if not tree:
         return { "msg": "No tree loaded" }
+    
     if up:
       aggregate_id = tree.get_nid_x_levels(aggregate_id,levels=up)
-      tree_dict = tree.to_dict(aggregate_id,with_data=True)
-    
-    return { "aggregates": tree.to_dict(aggregate_id,with_data=True)}
+    # optimization: only return the required data (Name, stats)
+    return { "aggregates": tree.to_nav_dict(aggregate_id)}
 
-@router.get("/{aggregate_id}/list")
+@router.get("/{aggregate_id}/flat")
 async def get_flat_aggregates(aggregate_id: Union[str,UUID] = None):
     tree = cache.tree
     node = tree.get_node(aggregate_id)
-
-    return { "aggregates": node.successors }
+    children = tree.children( aggregate_id)
+    return { "aggregates": children }
 
 @router.get("/{aggregate_id}/columns")
 async def get_aggregate_columns(aggregate_id: Union[str,UUID] = None):

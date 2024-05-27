@@ -4,7 +4,13 @@ import {
   FileIcon,
   WorkflowIcon,
 } from "@primer/octicons-react";
-import { Box, Octicon, PageLayout, TreeView } from "@primer/react";
+import {
+  Box,
+  Octicon,
+  PageLayout,
+  SegmentedControl,
+  TreeView,
+} from "@primer/react";
 import axios from "axios";
 import { useContext } from "react";
 import { Link, useLoaderData, useNavigate } from "react-router-dom";
@@ -25,14 +31,23 @@ export async function loader({ params }) {
 
 export default function ProcessAggregates() {
   const { aggregates } = useLoaderData();
+  console.log(aggregates);
 
   return (
     <>
       <PageLayout.Content>
-        {aggregates.map((aggregate) => (
-          <Box key={aggregate.id}>{aggregate.name}</Box>
-        ))}
+        <SegmentedControl aria-label="Group View">
+          <SegmentedControl.Button defaultSelected>
+            Preview
+          </SegmentedControl.Button>
+          <SegmentedControl.Button>Raw</SegmentedControl.Button>
+          <SegmentedControl.Button>Blame</SegmentedControl.Button>
+        </SegmentedControl>
       </PageLayout.Content>
+
+      {aggregates?.map((aggregate) => (
+        <div key={aggregate._identifier}>{aggregate.data.name}</div>
+      ))}
     </>
   );
 }

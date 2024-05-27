@@ -1,4 +1,4 @@
-from typing import List, Mapping, Tuple
+from typing import Mapping
 from pandas import DataFrame
 
 from models.workspacedata import WorkspaceData
@@ -9,6 +9,7 @@ from models.job import JobList
 workspace: WorkspaceData = None
 aggregate: Aggregate = None
 event_log : DataFrame = None
+root: Aggregate = None
 tree: Tree = None
 collections: None
 
@@ -17,6 +18,3 @@ df_joined : DataFrame = None
 parameters : Mapping = {}
 
 joblist:JobList  = None
-
-
-#variants : Mapping[int, Tuple[ConcurrencyGroup, Trace, List, VariantInformation]] = {}

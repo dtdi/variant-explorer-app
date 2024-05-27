@@ -102,7 +102,8 @@ async def _load_workspace(id: UUID, repo: ConfigurationRepository):
     )
 
     cache.joblist.add_job( load_job )
-    workspace = await load_workspace(load_job)
+    await load_workspace(load_job)
+    workspace = cache.workspace
     return workspace
 
 @router.get("/getWorkspaces/{workspace_id}")
@@ -117,7 +118,6 @@ async def get_workspace(workspace_id: UUID,
                          repo: ConfigurationRepository = Depends(get_config_repo)):
     
     workspace = await _load_workspace(id=workspace_id, repo=repo)
-    
     tree = cache.tree
     node = tree.get_node(str(aggregate_id))
     breadcrumbs, level = tree.get_breadcrumbs(node.identifier)

@@ -7,8 +7,8 @@ from datetime import datetime
 class Bookmark(BaseModel):
     id: UUID = uuid4()
     name: str
-    description: str
-    aggregate: Union[UUID, None] = None
+    description: Optional[str] = None
+    aggregate: Union[UUID, str] = None
     related: list[Union[UUID, None] ] = []
     type: str = "bookmark"
     icon: Optional[str] = None
