@@ -2,7 +2,7 @@ import { TableIcon } from "@primer/octicons-react";
 import { ActionList, AnchoredOverlay, Button } from "@primer/react";
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ApiContext } from "../../main";
+import { GlobalContext } from "../../global-context";
 import { AggregateContext } from "../../routes/AggregateRoot";
 import axios from "axios";
 
@@ -15,7 +15,7 @@ export default function MultiColumnSplitter({ columns }) {
         column.distinct_values < 5
     )
     .sort((a, b) => a.distinct_values - b.distinct_values);
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
   const { workspace, aggregate, stats } = useContext(AggregateContext);
   const [open, setOpen] = useState(false);
   const toggle = () => setOpen(!open);

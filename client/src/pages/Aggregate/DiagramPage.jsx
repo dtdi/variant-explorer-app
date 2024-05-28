@@ -41,7 +41,7 @@ import { quadtree } from "d3-quadtree";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AggregateContext } from "../../routes/AggregateRoot";
 import axios from "axios";
-import { ApiContext } from "../../main";
+import { GlobalContext } from "../../global-context";
 
 const collide = function () {
   let nodes = [];
@@ -192,7 +192,7 @@ const LayoutFlow = ({ n, e }) => {
 };
 
 export default function ProcessMapPage() {
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
   const { workspace, aggregate } = useContext(AggregateContext);
 
   const [nodes, setNodes] = useState([]);

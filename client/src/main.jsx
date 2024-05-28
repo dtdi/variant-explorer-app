@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./index.css";
 import {
   createBrowserRouter,
@@ -23,7 +24,6 @@ import ColumnSettingsPage, {
 
 import AggregateRoot, {
   loader as aggregateLoader,
-  action as aggregateRedirectAction,
 } from "./routes/AggregateRoot";
 
 import DiagramPage2 from "./pages/Aggregate/DiagramPageV2";
@@ -37,13 +37,11 @@ import ColumnsPage, {
 import OverviewPage, {
   loader as overviewLoader,
 } from "./pages/Aggregate/OverviewPage";
-
-const globalState = {
-  apiUrl: "http://localhost:41211",
-  jobs: {},
-};
-
-export const ApiContext = React.createContext();
+import CollectionsPage, {
+  loader as collectionsLoader,
+} from "./pages/Workspace/CollectionsPage";
+import { GlobalStateProvider } from "./global-context";
+import Toaster from "./components/Toaster";
 
 // todo replace with createMemoryRouter
 const router = createBrowserRouter([
@@ -75,6 +73,11 @@ const router = createBrowserRouter([
         path: "/workspace/settings/:workspaceId/",
         loader: columnSettingsLoader,
         element: <ColumnSettingsPage />,
+      },
+      {
+        path: "/workspace/settings/:workspaceId/collections",
+        loader: collectionsLoader,
+        element: <CollectionsPage />,
       },
     ],
   },
@@ -113,8 +116,9 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ApiContext.Provider value={globalState}>
+    <GlobalStateProvider>
       <RouterProvider router={router} />
-    </ApiContext.Provider>
+      <Toaster />
+    </GlobalStateProvider>
   </React.StrictMode>
 );

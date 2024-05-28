@@ -9,6 +9,7 @@ import models.workspace
 from pmxplain import describe_meta
 from models.aggregate_column import AggregateColumn
 import models as models
+from pmxplain import abstract_aggregate
 from models.stats import Stats
 from models.split import Split
 import os
@@ -51,19 +52,17 @@ class Aggregate(BaseModel):
         return self.name
 
     def get_llm_description(self):
-        ret = ["\n"]
-        ret.append(f"Aggregate: {self.name}\n")
-        ret.append(f"Description: {self.description}\n")
+        ret = [""]
         ret.append(f"Split: {str(self.split) if self.split is not None else ''}\n")
-        ret.append(f"Number of cases: {self.stats.number_cases}\n")
-        ret.append(f"Number of variants: {self.stats.number_variants}\n")
-        ret.append(f"Number of events: {self.stats.number_events}\n")
-        ret.append(f"Fraction of total cases: {self.stats.fraction_total_cases}\n")
-        ret.append(f"Fraction of total events: {self.stats.fraction_total_events}\n")
+        ret.append(f"Fraction of total cases: {int(self.stats.fraction_total_cases*100)}%\n")
 
-        ret.append("\nColumns:\n")
+        ret.append("\nDuration of the cases:\n")
+        ret.append( self.get_column_by_event_log_column('duration').llm_string )
+
+        ret.append("\nColumns that share the same property falues accross all cases:\n")
         for column in self.columns:
-            ret.append(column.llm_string)
+            if column.is_final:
+              ret.append(column.llm_string)
         return "".join(ret)
     
     def get_column_by_name(self, column_name: str) -> AggregateColumn:
@@ -112,15 +111,28 @@ class Aggregate(BaseModel):
         self.stats.number_cases = len(self.cases)
         self.stats.number_variants = int(self.cases['case:##variant_str'].nunique())
         self.stats.number_events = int(self.cases['case:##len'].sum())
+
+        duration = self.get_column_by_event_log_column('duration')
+        if duration is not None and duration.stats is not None:
+          self.stats.mean_duration = duration.stats['mean']
+          self.stats.median_duration = duration.stats['median']
+          self.stats.min_duration = duration.stats['min']
+          self.stats.max_duration = duration.stats['max']
+
+
+        events_per_case = self.get_column_by_event_log_column('length')
+        if events_per_case is not None and events_per_case.stats is not None:
+          self.stats.mean_events_per_case = events_per_case.stats['mean']
+          self.stats.median_events_per_case = events_per_case.stats['median']
+          self.stats.min_events_per_case = events_per_case.stats['min']
+          self.stats.max_events_per_case = events_per_case.stats['max']
+
         if cache.root is not None:
           self.stats.fraction_total_cases = self.stats.number_cases / cache.root.stats.number_cases
           self.stats.fraction_total_events = self.stats.number_events / cache.root.stats.number_events
         else:
           self.stats.fraction_total_cases = 1
           self.stats.fraction_total_events = 1
-
-        self.description = self.get_llm_description()
-
     
     def boot(self):
         self.cases = pd.read_pickle(self.get_file('cases.pkl'))

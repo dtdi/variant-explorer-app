@@ -130,7 +130,7 @@ async def get_workspace(workspace_id: UUID,
 async def init_log(d: WorkspaceMin, background_tasks: BackgroundTasks, repo: ConfigurationRepository = Depends(get_config_repo), ):
     conf = repo.get_configuration()
     workspace = conf.get_workspace(d.id)
-    workspace.ensure_directory()
+    #workspace.ensure_directory()
 
     import_job = Job(job_name="init_log", workspace_id=workspace.id, 
                      job_data={ "log_file": workspace.log_file, "workspace": workspace })

@@ -42,6 +42,7 @@ def _import_event_log(log_path: str, workspace: Workspace):
 
     workspaceData = workspace.data
     workspaceData.init_columns(meta)
+    cache.clear()
     cache.workspace = workspaceData
     _refresh_tree(workspaceData, cases, meta)
     

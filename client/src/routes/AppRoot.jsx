@@ -23,7 +23,7 @@ import {
   WorkflowIcon,
 } from "@primer/octicons-react";
 import { NavLink, Outlet, useLoaderData } from "react-router-dom";
-import { ApiContext } from "../main";
+import { GlobalContext } from "../global-context";
 
 export async function loader() {
   const apiUrl = "http://localhost:41211";
@@ -34,7 +34,7 @@ export async function loader() {
 }
 
 export default function AppRoot() {
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
   const { appState } = useLoaderData();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const returnFocusRef = useRef(null);

@@ -19,6 +19,10 @@ class Column(BaseModel):
     aggregate_column_type:  Optional[str] = None
 
     def init(self):
+        
+        if self.display_name.startswith('Case:'):
+            self.display_name = self.name[5:]
+
         self.infer_aggregate_column_type()
         if self.name == 'case:concept:name':
             self.event_log_column = 'case_id'

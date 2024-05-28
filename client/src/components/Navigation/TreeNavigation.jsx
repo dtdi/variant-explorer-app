@@ -2,10 +2,16 @@ import { useContext, useEffect, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import { AggregateContext } from "../../routes/AggregateRoot";
 import { Label, Octicon, TreeView } from "@primer/react";
-import { DiffAddedIcon, PinIcon, WorkflowIcon } from "@primer/octicons-react";
+import {
+  DiffAddedIcon,
+  FileDirectoryFillIcon,
+  FileDirectoryIcon,
+  PinIcon,
+  WorkflowIcon,
+} from "@primer/octicons-react";
 import axios from "axios";
 import { formatNumber } from "../../utils";
-import { ApiContext } from "../../main";
+import { GlobalContext } from "../../global-context";
 
 const splitColorMap = {};
 
@@ -40,11 +46,13 @@ function TreeNavigation({ data, children, level }) {
       }}
     >
       <TreeView.LeadingVisual>
-        {children ? <TreeView.DirectoryIcon /> : <WorkflowIcon />}
+        {children ? (
+          <FileDirectoryFillIcon fill={getSplitColor(data?.split?.id, level)} />
+        ) : (
+          <WorkflowIcon fill={getSplitColor(data?.split?.id, level)} />
+        )}
       </TreeView.LeadingVisual>
-      <span style={{ color: getSplitColor(data?.split?.id, level) }}>
-        {data.name}
-      </span>
+      {data.name}
 
       <TreeView.TrailingVisual>
         {data.bookmark_id !== null && <Octicon sx={{ mr: 1 }} icon={PinIcon} />}
@@ -71,19 +79,19 @@ function TreeNavigation({ data, children, level }) {
 }
 
 export default function AggregateNavigation({ up }) {
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
   const { workspace, aggregate } = useContext(AggregateContext);
   const [isLoading, setIsLoading] = useState(false);
   const [aggregates, setAggregates] = useState({});
 
   useEffect(() => {
-    if (!up) return;
+    if (!up || !apiUrl) return;
     setIsLoading(true);
     axios
       .get(`${apiUrl}/aggregates/${aggregate._identifier}?up=${up}`)
       .then((res) => setAggregates(res.data.aggregates))
       .finally(() => setIsLoading(false));
-  }, [aggregate, up]);
+  }, [aggregate, up, apiUrl]);
 
   if (isLoading) {
     return (

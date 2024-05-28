@@ -20,11 +20,11 @@ import {
 
 import { AggregateContext } from "../../routes/AggregateRoot";
 import axios from "axios";
-import { ApiContext } from "../../main";
+import { GlobalContext } from "../../global-context";
 import { BugIcon } from "@primer/octicons-react";
 
 export default function ProcessMapPage() {
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
   const { workspace, aggregate } = useContext(AggregateContext);
   const canvasRef = useRef(null);
   const [nodes, setNodes] = useState([]);

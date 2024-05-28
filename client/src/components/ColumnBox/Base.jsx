@@ -13,7 +13,7 @@ export default function ({ column }) {
         borderRadius: 2,
         borderColor: "border.default",
       }}
-      key={column.id}
+      key={column.name}
     >
       <div className="d-flex justify-content-between align-items-center">
         <Text
@@ -106,6 +106,7 @@ export default function ({ column }) {
             data={Object.entries(column.value_dict).map(([key, value]) => ({
               name: key,
               count: value,
+              key: key,
             }))}
           />
         </Table.Container>

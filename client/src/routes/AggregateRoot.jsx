@@ -2,48 +2,36 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   ThemeProvider,
   BaseStyles,
-  useTheme,
   Box,
-  PageLayout,
   UnderlineNav,
-  Button,
   Text,
   IconButton,
-  StateLabel,
   BranchName,
-  Link,
   Breadcrumbs,
   SplitPageLayout,
   Heading,
   Label,
   LabelGroup,
-  AnchoredOverlay,
   FormControl,
   TextInput,
   Textarea,
   ActionMenu,
   ActionList,
 } from "@primer/react";
-import { Dialog, Hidden, PageHeader } from "@primer/react/experimental";
+import { Dialog, PageHeader } from "@primer/react/experimental";
 import {
-  ArrowRightIcon,
   BriefcaseIcon,
   ChecklistIcon,
   ColumnsIcon,
   CommentDiscussionIcon,
-  CommitIcon,
   DownloadIcon,
-  FileDiffIcon,
   FoldUpIcon,
   GearIcon,
-  GraphIcon,
   PencilIcon,
   PinIcon,
   PinSlashIcon,
-  ReplyIcon,
   RepoIcon,
-  ThreeBarsIcon,
-  TriangleDownIcon,
+  TrashIcon,
   WorkflowIcon,
 } from "@primer/octicons-react";
 import {
@@ -59,14 +47,9 @@ import TreeNavigation from "../components/Navigation/TreeNavigation";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { formatDuration, formatNumber } from "../utils";
-import { Icon } from "reaflow";
 import { Field, Form, Formik } from "formik";
-import { ApiContext } from "../main";
-
-export async function action({ params, request }) {
-  let formData = await request.formData();
-  console.log(params, request);
-}
+import { GlobalContext } from "../global-context";
+import JobsDialog from "../components/JobsDialog";
 
 export async function loader({ params }) {
   const { workspaceId, aggregateId } = params;
@@ -85,7 +68,8 @@ export async function loader({ params }) {
 export const AggregateContext = React.createContext();
 
 export default function WorkspaceRoot() {
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl, addToast, isLoading, setIsLoading } =
+    useContext(GlobalContext);
 
   const [aggregateEditDialogOpen, setAggregateEditDialogOpen] = useState(false);
   const editFormRef = useRef();
@@ -106,17 +90,62 @@ export default function WorkspaceRoot() {
       axios
         .get(`${apiUrl}/collections/getBookmark/${aggregate.data.bookmark_id}`)
         .then((res) => {
-          console.log(res);
           setBookmark(res.data);
         });
     }
   }, [aggregate]);
 
   const deleteAggregate = async () => {
-    const res = await axios
+    setIsLoading(true);
+    axios
       .delete(`${apiUrl}/aggregates/deleteAggregate/${aggregate._identifier}`)
-      .then((res) => res.data);
-    navigate(`/workspace/${workspace.id}/${res.parent_id}`);
+      .then((res) => {
+        navigate(`/workspace/${workspace.id}/${res.data.parent_id}`);
+        addToast("Group deleted", "The group has been deleted", "success");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+  const deleteSplit = async () => {
+    setIsLoading(true);
+    axios
+      .delete(`${apiUrl}/aggregates/deleteSplit/${aggregate.data?.split?.id}`)
+      .then((res) => {
+        navigate(`/workspace/${workspace.id}/${res.data.parent_id}`);
+        addToast("Split deleted", "The split has been deleted", "success");
+      })
+      .catch((err) => {
+        addToast(
+          "Error",
+          "An error occurred while deleting the split",
+          "error"
+        );
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
+  const deleteChildren = async () => {
+    setIsLoading(true);
+
+    axios
+      .delete(`${apiUrl}/aggregates/deleteChildren/${aggregate._identifier}`)
+      .then((res) => {
+        revalidator.revalidate();
+        addToast(
+          "Children deleted",
+          "All children of this group have been deleted",
+          "success"
+        );
+      })
+      .catch((err) => {
+        addToast("Error", "An error occurred while deleting children", "error");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   const saveBookmarkForm = async (updatedBookmark) => {
@@ -129,12 +158,24 @@ export default function WorkspaceRoot() {
   };
 
   const saveAggregateForm = async (updatedAggregate) => {
-    const res = await axios.post(
-      `${apiUrl}/aggregates/editAggregate`,
-      updatedAggregate
-    );
-    setAggregateEditDialogOpen(false);
-    revalidator.revalidate();
+    setIsLoading(true);
+    axios
+      .post(`${apiUrl}/aggregates/editAggregate`, updatedAggregate)
+      .then((res) => {
+        addToast("Group updated", "The group has been updated", "success");
+      })
+      .catch((err) => {
+        addToast(
+          "Error",
+          "An error occurred while updating the group",
+          "error"
+        );
+      })
+      .finally(() => {
+        setIsLoading(false);
+        setAggregateEditDialogOpen(false);
+        revalidator.revalidate();
+      });
   };
 
   const formatLabelValue = (value) => {
@@ -147,7 +188,6 @@ export default function WorkspaceRoot() {
     return value.value;
   };
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const revalidator = useRevalidator();
 
@@ -189,7 +229,7 @@ export default function WorkspaceRoot() {
                       aria-label="Bookmarks"
                       icon={RepoIcon}
                       onClick={() => {
-                        navigate(`workspace/collections/${workspace.id}`);
+                        navigate(`/workspace/collections/${workspace.id}`);
                       }}
                     />
 
@@ -200,6 +240,7 @@ export default function WorkspaceRoot() {
                         navigate(`/workspace/settings/${workspace.id}`);
                       }}
                     />
+                    <JobsDialog />
                   </PageHeader.ContextAreaActions>
                 </PageHeader.ContextArea>
                 <PageHeader.TitleArea
@@ -220,7 +261,6 @@ export default function WorkspaceRoot() {
                       <Dialog
                         title="Bookmark and Comment"
                         subtitle="Bookmark this group to easily access it later"
-                        width="medium"
                         onClose={toggleBookmarkDialogOpen}
                         footerButtons={[
                           {
@@ -279,25 +319,41 @@ export default function WorkspaceRoot() {
                         onClick={toggleBookmarkDialogOpen}
                       />
                     )}
+
                     <ActionMenu>
                       <ActionMenu.Button>Edit</ActionMenu.Button>
                       <ActionMenu.Overlay>
-                        <ActionList.Divider />
+                        <ActionList.Item
+                          variant="danger"
+                          onSelect={deleteChildren}
+                        >
+                          <ActionList.LeadingVisual>
+                            <TrashIcon />
+                          </ActionList.LeadingVisual>
+                          Delete Children
+                        </ActionList.Item>
                         <ActionList.Item
                           variant="danger"
                           onSelect={deleteAggregate}
                         >
+                          <ActionList.LeadingVisual>
+                            <TrashIcon />
+                          </ActionList.LeadingVisual>
                           Delete Group
+                        </ActionList.Item>
+                        <ActionList.Divider />
+                        <ActionList.Item
+                          variant="danger"
+                          onSelect={deleteSplit}
+                        >
+                          <ActionList.LeadingVisual>
+                            <TrashIcon />
+                          </ActionList.LeadingVisual>
+                          Delete Split
                         </ActionList.Item>
                       </ActionMenu.Overlay>
                     </ActionMenu>
-                    <Button
-                      variant="primary"
-                      trailingVisual={TriangleDownIcon}
-                      onClick={deleteAggregate}
-                    >
-                      Pin
-                    </Button>
+
                     <IconButton
                       aria-label="Download Group as Event Log"
                       icon={DownloadIcon}
@@ -446,7 +502,6 @@ export default function WorkspaceRoot() {
               {aggregateEditDialogOpen && (
                 <Dialog
                   title="Edit Aggregate"
-                  width="medium"
                   onClose={toggleAggregateEditDialogOpen}
                   footerButtons={[
                     {

@@ -18,3 +18,13 @@ df_joined : DataFrame = None
 parameters : Mapping = {}
 
 joblist:JobList  = None
+
+def clear():
+  workspace = None
+  aggregate = None
+  event_log = None
+  root = None
+  tree = None
+  collections = None
+  df_joined = None
+  parameters = {}

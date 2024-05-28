@@ -5,12 +5,12 @@ import { useLoaderData } from "react-router-dom";
 import { AggregateContext } from "../../routes/AggregateRoot";
 import axios from "axios";
 import { BookIcon } from "@primer/octicons-react";
-import { ApiContext } from "../../main";
+import { GlobalContext } from "../../global-context";
 import { formatDuration } from "../../utils";
 
 export default function ProcessOverview() {
   const { workspace, aggregate, stats } = useContext(AggregateContext);
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
   const [tableData, setTableData] = useState({});
   const [cases, setCases] = useState([]);
   const [columns, setColumns] = useState([]);
@@ -70,7 +70,7 @@ export default function ProcessOverview() {
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: "minmax(0,1fr) 300px",
+        gridTemplateColumns: "minmax(0,1fr)",
         gap: 3,
       }}
     >
@@ -172,30 +172,6 @@ export default function ProcessOverview() {
           totalCount={tableData?.total || 100}
         />
       </Table.Container>
-      <Box
-        sx={{
-          width: "300px",
-          borderRadius: 2,
-          m: 3,
-          p: 3,
-          borderWidth: 1,
-          borderStyle: "solid",
-          borderColor: "border.default",
-        }}
-      >
-        {the_case ? (
-          asdf
-        ) : (
-          <Blankslate spacious={true}>
-            <Blankslate.Visual>
-              <BookIcon size={"medium"} />
-            </Blankslate.Visual>
-            <Blankslate.Heading>
-              Select a case from the left to see details
-            </Blankslate.Heading>
-          </Blankslate>
-        )}
-      </Box>
     </Box>
   );
 }

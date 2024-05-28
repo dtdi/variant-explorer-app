@@ -26,7 +26,7 @@ import { useState, createRef, useRef, useContext } from "react";
 import { Link, useLoaderData, redirect, useNavigate } from "react-router-dom";
 import { Formik, Field, Form } from "formik";
 import axios from "axios";
-import { ApiContext } from "../../main";
+import { GlobalContext } from "../../global-context";
 
 export async function loader() {
   const apiUrl = "http://localhost:41211";
@@ -37,7 +37,7 @@ export async function loader() {
 }
 
 export default function AppOverview() {
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
   const navigate = useNavigate();
 
   const { workspaces } = useLoaderData();

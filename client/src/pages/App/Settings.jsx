@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
-import { ApiContext } from "../../main";
+import { GlobalContext } from "../../global-context";
 import axios from "axios";
 
 export async function loader() {
@@ -11,7 +11,7 @@ export async function loader() {
 }
 
 export default function AppSettings() {
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
   const navigate = useNavigate();
 
   const { settings } = useLoaderData();

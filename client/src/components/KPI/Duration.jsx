@@ -41,8 +41,6 @@ export default function Base({ column }) {
       .domain([min, max])
       .range([margin.left, innerWidth + margin.left]);
 
-    console.log(xScale(1));
-
     // Create the boxplot
     svg
       .append("rect")

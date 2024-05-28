@@ -20,7 +20,7 @@ import axios from "axios";
 import { RocketIcon } from "@primer/octicons-react";
 import { WorkspaceContext } from "../../routes/WorkspaceRoot";
 import { Field, Form, Formik } from "formik";
-import { ApiContext } from "../../main";
+import { GlobalContext } from "../../global-context";
 
 export async function loader({ params }) {
   const { workspaceId, aggregateId } = params;
@@ -31,7 +31,7 @@ export async function loader({ params }) {
 export default function ColumnSettingsPage() {
   const { workspace } = useContext(WorkspaceContext);
   const [columns, setColumns] = useState([]); // [columns, setColumns
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
   useEffect(() => {
     setColumns(workspace.columns);
   }, [workspace]);

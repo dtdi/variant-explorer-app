@@ -25,9 +25,9 @@ class BookMarkInput(BaseModel):
     description: str = None
     icon: Optional[str] = None
 
-@router.get("/getBookmarks")
-async def get_bookmarks():
-  return { "msg": "getBookmarks", "bookmarks": cache.workspace.bookmarks }
+@router.get("/{workspace_id}/getBookmarks")
+async def get_bookmarks(workspace_id: UUID):
+  return { "msg": "getBookmarks", "bookmarks": cache.workspace.collection }
 
 @router.get("/getBookmark/{bookmark_id}")
 async def get_bookmark(bookmark_id: UUID):

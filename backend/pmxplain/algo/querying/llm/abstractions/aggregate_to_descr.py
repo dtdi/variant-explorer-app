@@ -177,3 +177,4 @@ def apply(log: Union[EventLog, EventStream, pd.DataFrame], parameters: Optional[
     fea_df = pandas_utils.instantiate_dataframe(data, columns=feature_names)
 
     return textual_abstraction_from_fea_df(fea_df, parameters=parameters)
+

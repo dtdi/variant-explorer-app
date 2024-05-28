@@ -10,12 +10,12 @@ import {
   Heading,
   Text,
 } from "@primer/react";
-import { ApiContext } from "../../main";
-
+import { GlobalContext } from "../../global-context";
 import { formatNumber } from "../../utils";
 
 export default function ColumnSplitter({ column }) {
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl, isLoading, setIsLoading, addToast } =
+    useContext(GlobalContext);
   const { workspace, aggregate, stats } = useContext(AggregateContext);
   const navigate = useNavigate();
 
@@ -29,6 +29,7 @@ export default function ColumnSplitter({ column }) {
   };
 
   const groupBySplit = (columns) => {
+    setIsLoading(true);
     axios
       .post(`${apiUrl}/aggregates/splitAggregate`, {
         workspace_id: workspace.id,
@@ -38,7 +39,9 @@ export default function ColumnSplitter({ column }) {
       })
       .then((res) => {
         navigate(`/workspace/${workspace.id}/${res.data.id}`);
-      });
+        addToast("Split created", "created a new split");
+      })
+      .finally(() => setIsLoading(false));
   };
 
   const cutSplit = (column, bins) => {

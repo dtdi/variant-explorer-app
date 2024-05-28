@@ -2,6 +2,7 @@ import {
   ActionList,
   Box,
   BranchName,
+  Button,
   CounterLabel,
   Heading,
   IconButton,
@@ -10,8 +11,9 @@ import {
   SegmentedControl,
   Text,
 } from "@primer/react";
+import Markdown from "markdown-to-jsx";
 import axios from "axios";
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData, useRevalidator } from "react-router-dom";
 import { AggregateContext } from "../../routes/AggregateRoot";
 import { useContext, useEffect, useState } from "react";
 import ColumnSplitter from "../../components/Splitter/ColumnSplitter";
@@ -21,8 +23,9 @@ import Base from "../../components/KPI/Base";
 import BaseColumnBox from "../../components/ColumnBox/Base";
 
 import Duration from "../../components/KPI/Duration";
-import { DataTable, PageHeader, Table } from "@primer/react/drafts";
+import { Blankslate, DataTable, PageHeader, Table } from "@primer/react/drafts";
 import { GitBranchIcon, PencilIcon } from "@primer/octicons-react";
+import { GlobalContext } from "../../global-context";
 
 export async function loader({ params }) {
   const { workspaceId, aggregateId } = params;
@@ -33,9 +36,28 @@ export async function loader({ params }) {
 }
 
 export default function OverviewPage() {
-  const { apiUrl } = useLoaderData();
+  const { apiUrl, addToast, isLoading, setIsLoading } =
+    useContext(GlobalContext);
   const { workspace, aggregate, stats, explanation } =
     useContext(AggregateContext);
+  const revalidator = useRevalidator();
+
+  const generateDescription = () => {
+    setIsLoading(true);
+    axios
+      .post(`${apiUrl}/aggregates/editAggregate`, {
+        workspace_id: workspace.id,
+        aggregate_id: aggregate._identifier,
+        ai_magic: true,
+      })
+      .then((res) => {
+        addToast("Description generated", "generated a new description");
+      })
+      .finally(() => {
+        setIsLoading(false);
+        revalidator.revalidate();
+      });
+  };
 
   const [variantCounts, setVariantCounts] = useState({});
 
@@ -54,17 +76,6 @@ export default function OverviewPage() {
     return column;
   };
 
-  const nl2br = (str) => {
-    return str.split("\n").map((item, key) => {
-      return (
-        <span key={key}>
-          {item}
-          <br />
-        </span>
-      );
-    });
-  };
-
   return (
     <>
       {/* event log columns with <= 1 values => explain */}
@@ -77,7 +88,24 @@ export default function OverviewPage() {
           mb: 3,
         }}
       >
-        <p>{nl2br(aggregate.data.description)}</p>
+        {aggregate.data.description ? (
+          <p>
+            <Markdown>{aggregate.data.description}</Markdown>
+          </p>
+        ) : (
+          <p className={{ "placeholder-glow": isLoading }}>
+            <span>Group description </span>
+            <span className="placeholder col-7"></span>
+            <span className="placeholder col-3"></span>
+            <span className="placeholder col-6"></span>
+            <span className="placeholder col-12"></span>
+            <div>
+              <Button disabled={isLoading} onClick={generateDescription}>
+                generate
+              </Button>
+            </div>
+          </p>
+        )}
 
         <Duration column={getColumnByName("duration")} />
         <Base column={getColumnByName("length")} />

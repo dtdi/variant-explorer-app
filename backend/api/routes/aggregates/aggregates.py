@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 from typing import Union,Optional
 from models import Aggregate, Tree
 import pmxplain.algo.split.split as split
+from pmxplain import abstract_aggregate
 import json
 
 
@@ -31,8 +32,33 @@ async def edit_aggregate(d: AggregateInput):
     aggregate.name = d.name
   if d.description:
     aggregate.description = d.description
+
+  if d.ai_magic:
+
+    aggregate.description = abstract_aggregate(aggregate.get_llm_description())
+  
   aggregate.save()
   return { "msg": "editAggregate", "aggregate": aggregate }
+
+# todo! 
+@router.delete("/deleteSplit/{split_id}")
+async def delete_split(split_id: Union[str,UUID]):
+  removed = []
+  for node in cache.tree.all_nodes_itr():
+    if node.data and node.data.split and node.data.split.id == split_id:
+      removed.append(node._identifier)
+  for node in removed:
+    cache.tree.get_node(node).data.delete()
+  cache.workspace.save()
+  return { "msg": "deleteSplit", "split_id": split_id, "removed": removed}
+
+@router.delete("/deleteChildren/{aggregate_id}")
+async def delete_children(aggregate_id: Union[str,UUID]):
+  children = cache.tree.children(aggregate_id)
+  for child in children:
+    cache.tree.remove_node(child._identifier)
+  cache.workspace.save()
+  return { "msg": "deleteChildren", "aggregate_id": aggregate_id, 'children': children }
 
 @router.delete("/deleteAggregate/{aggregate_id}")
 async def delete_aggregate(aggregate_id: Union[str,UUID]):
@@ -85,11 +111,36 @@ async def get_aggregates(aggregate_id: Union[str,UUID] = None, up:int = None):
     return { "aggregates": tree.to_nav_dict(aggregate_id)}
 
 @router.get("/{aggregate_id}/flat")
-async def get_flat_aggregates(aggregate_id: Union[str,UUID] = None):
+async def get_flat_aggregates(aggregate_id: Union[str,UUID] = None, projection: Optional[str] = 'children'):
     tree = cache.tree
-    node = tree.get_node(aggregate_id)
-    children = tree.children( aggregate_id)
-    return { "aggregates": children }
+    if not tree:
+        return { "msg": "No tree loaded" }
+
+    if projection == "children":
+      nodes = tree.children( aggregate_id)
+      
+    elif projection == "subtree":
+      subtree = tree.subtree( aggregate_id)
+      nodes = subtree.all_nodes()
+
+    workspace = cache.workspace
+    out = []
+    for node in nodes:
+      nodeObj = {
+        "id": node._identifier,
+        "workspace_id": node.data.workspace_id,
+        "name": node.data.name,
+        "description": node.data.description,
+        "split": node.data.split,
+        "explanation": node.data.explanation,
+        "stats": node.data.stats,
+        "created_at": node.data.created_at,
+        "bookmark": workspace.get_bookmark(node.data.bookmark_id) if node.data.bookmark_id else None,
+        "can_edit": node.data.can_edit,
+      }
+      out.append(nodeObj)
+
+    return { "aggregates": out }
 
 @router.get("/{aggregate_id}/columns")
 async def get_aggregate_columns(aggregate_id: Union[str,UUID] = None):

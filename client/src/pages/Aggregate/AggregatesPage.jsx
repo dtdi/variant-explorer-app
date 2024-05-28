@@ -12,18 +12,24 @@ import {
   TreeView,
 } from "@primer/react";
 import axios from "axios";
-import { useContext } from "react";
-import { Link, useLoaderData, useNavigate } from "react-router-dom";
-import { AggregateContext } from "../../routes/AggregateRoot";
-import TreeNavigation from "../../components/Navigation/TreeNavigation";
+import { useContext, useState } from "react";
+import {
+  Link,
+  useLoaderData,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
+import AggregateCard from "../../components/AggregateCard";
 
-export async function loader({ params }) {
+export async function loader({ params, request }) {
   const { workspaceId, aggregateId } = params;
+  const projection =
+    new URL(request.url).searchParams.get("projection") || "subtree";
 
   const apiUrl = "http://localhost:41211";
 
   const { aggregates } = await axios
-    .get(`${apiUrl}/aggregates/${aggregateId}/flat`)
+    .get(`${apiUrl}/aggregates/${aggregateId}/flat?projection=${projection}`)
     .then((res) => res.data);
 
   return { aggregates };
@@ -31,23 +37,45 @@ export async function loader({ params }) {
 
 export default function ProcessAggregates() {
   const { aggregates } = useLoaderData();
-  console.log(aggregates);
+  let [searchParams, setSearchParams] = useSearchParams();
+
+  const handleChange = (i) => {
+    if (i === 0) {
+      setSearchParams({ projection: "subtree" });
+    } else {
+      setSearchParams({ projection: "children" });
+    }
+  };
 
   return (
     <>
       <PageLayout.Content>
-        <SegmentedControl aria-label="Group View">
-          <SegmentedControl.Button defaultSelected>
-            Preview
+        <SegmentedControl onChange={handleChange} aria-label="Group View">
+          <SegmentedControl.Button
+            selected={searchParams.get("projection") === "subtree"}
+          >
+            Subtree
           </SegmentedControl.Button>
-          <SegmentedControl.Button>Raw</SegmentedControl.Button>
-          <SegmentedControl.Button>Blame</SegmentedControl.Button>
+          <SegmentedControl.Button
+            selected={searchParams.get("projection") == "children"}
+          >
+            Children
+          </SegmentedControl.Button>
         </SegmentedControl>
       </PageLayout.Content>
-
-      {aggregates?.map((aggregate) => (
-        <div key={aggregate._identifier}>{aggregate.data.name}</div>
-      ))}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 3,
+          mt: 3,
+          mb: 3,
+        }}
+      >
+        {aggregates?.map((aggregate) => (
+          <AggregateCard aggregate={aggregate} key={aggregate._identifier} />
+        ))}
+      </Box>
     </>
   );
 }

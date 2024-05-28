@@ -5,7 +5,7 @@ import { useLoaderData } from "react-router-dom";
 import { AggregateContext } from "../../routes/AggregateRoot";
 import axios from "axios";
 import { BookIcon } from "@primer/octicons-react";
-import { ApiContext } from "../../main";
+import { GlobalContext } from "../../global-context";
 import { formatDuration } from "../../utils";
 
 export async function loader({ params }) {
@@ -23,7 +23,7 @@ export async function loader({ params }) {
 export default function ColumnsPage() {
   const { columns, rows } = useLoaderData();
   const { workspace, aggregate, stats } = useContext(AggregateContext);
-  const { apiUrl } = useContext(ApiContext);
+  const { apiUrl } = useContext(GlobalContext);
 
   console.log(columns, rows);
 

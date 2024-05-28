@@ -34,20 +34,38 @@ class AggregateColumn(BaseModel):
     def llm_string(self):
       ret = ["\n"]
       ret.append(f"Column: {self.display_name}\n")
-      ret.append(f"Type: {self.type}\n")
-      ret.append(f"Distinct values: {self.distinct_values}\n")
-      ret.append(f"Recommended conversion: {self.recommended_conversion}\n")
-      ret.append(f"Event log column: {self.event_log_column}\n")
-      if self.distinct_values <= MAX_BINS_TO_HANDLE:
-        ret.append(f"Values: {self.value_dict}\n")
-      if self.stats:
-        ret.append(f"Stats: {self.stats}\n")   
+      ret.append(f"{self.description}\n")
+      ret.append(f"Datatype: {self.type}\n")
+      if not self.is_final:
+        ret.append(f"Number of distinct values: {self.distinct_values}\n")
+      #ret.append(f"Function of the column in an event log: {self.event_log_column}\n")
+      
+      if self.is_final and self.representative_value:
+        ret.append(f"Column Value for { int(self.representative_value['percentage']*100)}% of cases: {self.representative_value['value']}\n")
+
+      if not self.is_final and self.stats:
+        ret.append(f"Performance Statistics:\n")   
+        if self.type == 'timedelta':
+          ret.append(f"Average: { strfdelta(self.stats['mean'], inputtype='s', truncate=True )}\n")
+        else:
+          ret.append(f"Average: { self.stats['mean']}\n")
+
 
       return "".join(ret)
 
     
     @property
     def representative_value(self):
+      if not self.value_dict:
+        return {
+          "value": None,
+          "display_name": self.display_name,
+          "event_log_column": self.event_log_column,
+          "count": 0,
+          "display_as": self.display_as,
+          "percentage": 0.0
+
+        }
       v = list(self.value_dict.values())
       k = list(self.value_dict.keys())
       return { 
