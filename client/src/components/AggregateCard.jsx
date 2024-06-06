@@ -12,12 +12,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { formatDuration, formatNumber } from "../utils";
 
 export default function AggregateCard({ aggregate, onSelect }) {
-  console.log(aggregate);
   return (
     <div>
-      <div className="card text-bg-light">
+      <div className="card text-bg-light position-relative">
         <div className="card-body">
-          <h5 className="text-truncate card-title">{aggregate.name}</h5>
+          <h5 className=" card-title">{aggregate.name}</h5>
           <h6 className="card-subtitle text-muted">
             {aggregate?.split?.description}
           </h6>
@@ -65,16 +64,12 @@ export default function AggregateCard({ aggregate, onSelect }) {
           ))}
         </ul>
         <div class="card-body">
-          <Button
-            className="card-link"
-            as={Link}
+          <Link
+            className="card-link stretched-link"
             to={`/workspace/${aggregate.workspace_id}/${aggregate.id}`}
           >
-            <Octicon icon={ChevronRightIcon} />
-          </Button>
-          <Button className="card-link" onClick={() => onSelect(aggregate)}>
-            Select
-          </Button>
+            View Group <Octicon icon={ChevronRightIcon} />
+          </Link>
         </div>
         <div className="card-footer text-body-secondary fw-light fs-6">
           created <RelativeTime date={new Date(aggregate.created_at)} />

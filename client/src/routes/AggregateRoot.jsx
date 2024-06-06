@@ -90,7 +90,7 @@ export default function WorkspaceRoot() {
       axios
         .get(`${apiUrl}/collections/getBookmark/${aggregate.data.bookmark_id}`)
         .then((res) => {
-          setBookmark(res.data);
+          setBookmark(res.data.bookmark);
         });
     }
   }, [aggregate]);
@@ -279,6 +279,7 @@ export default function WorkspaceRoot() {
                             description: bookmark.description || "",
                             workspace_id: workspace.id,
                             aggregate_id: aggregate._identifier,
+                            id: bookmark.id,
                           }}
                           onSubmit={(values) => {
                             saveBookmarkForm(values);

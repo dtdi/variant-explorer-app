@@ -39,13 +39,10 @@ async def get_bookmark(bookmark_id: UUID):
 async def edit_or_add_bookmark(d: BookMarkInput):
   if d.id:
     bookmark = cache.workspace.get_bookmark(d.id)
-    if d.name:
-      bookmark.name = d.name
-    if d.description:
-      bookmark.description = d.description
-    if d.icon:
-      bookmark.icon = d.icon
-    bookmark.save()
+    bookmark.name = d.name
+    bookmark.description = d.description
+    bookmark.icon = d.icon
+    cache.workspace.save()
     return { "msg": "editBookmark", "bookmark": bookmark }
   else:
     aggregate = cache.tree.get_node(d.aggregate_id).data

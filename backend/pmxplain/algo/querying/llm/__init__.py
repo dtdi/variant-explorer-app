@@ -17,5 +17,5 @@ Do not make a conclusive statement such as "This recurring pattern of attributes
 
   query = "\n".join(query)
   print("XXXXXXX OPENAI QUERY XXXXXXXX")
-  result = openai_query(query, api_key='', openai_model='gpt-4-1106-preview')
+  result = openai_query(query, api_key='sk-proj-GR2EFaWeOu80Mb4zQMPrT3BlbkFJyz9sdWd1ZBHVQGmU4o1P', openai_model='gpt-4-1106-preview')
   return result

@@ -99,15 +99,8 @@ export default function AppOverview() {
           event logs. It offers tools to visualize and examine process data,
           helping users identify inefficiencies and improve workflow operations.
         </Text>
-        <ActionList variant="full">
-          <ActionList.LinkItem>asd</ActionList.LinkItem>
-        </ActionList>
       </Box>
       <Box>
-        <Flash sx={{ fontSize: 1, mb: 3 }}>
-          This is a flash message with an icon and an action.{" "}
-          <Link href="/">Learn more.</Link>
-        </Flash>
         {deleteDialogOpen && (
           <Dialog
             width="small"

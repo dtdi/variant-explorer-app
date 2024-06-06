@@ -17,21 +17,29 @@ export default function JobsDialog() {
       />
       {open && (
         <Dialog
-          width="small"
+          width="medium"
           position={"right"}
           title={"Jobs"}
           subtitle={"Running Jobs in the Backend"}
           onClose={() => setOpen(false)}
         >
-          {Object.values(jobs)
-            .sort((a, b) => b.created_at.localeCompare(a.created_at))
-            .map((job) => (
-              <div key={job.job_id}>
-                {job.job_name} -{" "}
-                <RelativeTime date={new Date(job.created_at)} />{" "}
-                {job.fulfillment} {job.status}
-              </div>
-            ))}
+          <div className="list-group">
+            {Object.values(jobs)
+              .sort((a, b) => b.created_at.localeCompare(a.created_at))
+              .map((job) => (
+                <div className="list-group-item" key={job.job_id}>
+                  <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{job.job_name}</h5>
+                  </div>
+                  <p class="mb-1">
+                    {job.fulfillment} {job.status}
+                  </p>
+                  <small class="text-body-secondary">
+                    <RelativeTime date={new Date(job.created_at)} />
+                  </small>
+                </div>
+              ))}
+          </div>
         </Dialog>
       )}
     </>
