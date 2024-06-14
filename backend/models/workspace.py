@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
 from datetime import datetime
 import pandas as pd
-from typing import Union, Optional
+from typing import Union, Optional,Dict
 from pathlib import Path
 import shutil
 import os
@@ -31,8 +31,18 @@ class Workspace(BaseModel):
     def get_file(self, filename: str) -> Path:
         return self.get_directory().joinpath(filename)
     
+    def clear_directory_except_log(self):
+          directory = self.get_directory()
+          for file in os.listdir(directory):
+            if file != "log.pkl":
+              file_path = os.path.join(directory, file)
+              if os.path.isfile(file_path):
+                os.remove(file_path)
+              elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+    
     def clear_directory(self):
-        shutil.rmtree(self.get_directory(), ignore_errors=True)
+        shutil.rmtree(self.get_directory(), ignore_errors=True)        
         self.ensure_directory()
 
     def ensure_directory(self):

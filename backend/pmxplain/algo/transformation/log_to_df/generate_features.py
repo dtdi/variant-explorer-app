@@ -79,7 +79,20 @@ def _generate_features(df_l):
 
   return df_joined,df_act
 
-def apply(event_log: pd.DataFrame):
-  cases, activites = _generate_features(event_log)
+def apply(event_log: pd.DataFrame, include_acivities: bool = False, feature_map: Dict = None):
+  cases, activities = _generate_features(event_log)
+
+  if include_acivities:
+    if feature_map is None:
+        feature_map = {}
+        columns = set(activities.columns.tolist())
+        columns = columns - set(['case:concept:name', 'time:timestamp', 'lifecycle:transition', 'concept:name'])
+
+        for c in columns:
+            name = f'first_{c}'
+            feature_map[name] = (  c, 'first' )
+
+    aggregated_df = activities.groupby("case:concept:name").agg( **feature_map)
+    cases = cases.join(aggregated_df)
   
-  return cases, activites
+  return cases, activities, feature_map

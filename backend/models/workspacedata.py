@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from uuid import UUID, uuid4
 from datetime import datetime
 import pandas as pd
-from typing import Union, Optional
+from typing import Union, Optional, Dict, Tuple
 from pathlib import Path
 import os
 from models.column import Column
@@ -20,6 +20,8 @@ class WorkspaceData(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     tree: Optional[Tree] = Field(default=None, exclude=True)
+    activity_features: Optional[Dict[str, Tuple]] = None
+
 
     def load_tree(self) -> Tree:        
         self.tree = Tree.from_file(self.get_file('tree.json'), self.id)

@@ -149,7 +149,7 @@ export default function AppOverview() {
                 description: currentRow.description || "",
                 id: currentRow.id,
                 log_name: currentRow.log_name || "",
-                file_name: currentRow.log_file || "",
+                log_file: currentRow.log_file || "",
               }}
               onSubmit={(values) => {
                 save(values);
@@ -186,7 +186,7 @@ export default function AppOverview() {
                 </FormControl>
                 <FormControl>
                   <FormControl.Label>Log File Location</FormControl.Label>
-                  <Field block="true" name="file_name" as={TextInput} />
+                  <Field block="true" name="log_file" as={TextInput} />
                 </FormControl>
               </Form>
             </Formik>
